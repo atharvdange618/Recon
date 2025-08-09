@@ -55,4 +55,67 @@ const initDb = () => {
   }
 };
 
-export { db, initDb };
+export type Bug = {
+  id?: number;
+  summary: string;
+  description?: string;
+  steps_to_reproduce?: string;
+  expected_result?: string;
+  actual_result?: string;
+  severity: "Blocker" | "Critical" | "Major" | "Minor";
+  priority: "High" | "Medium" | "Low" | "Critical";
+  status: "Reported" | "In Progress" | "On Hold" | "Resolved" | "Closed";
+  assignee_name?: string;
+  reporter_name?: string;
+  environment?: string;
+  resolution?:
+    | "Fixed"
+    | "Won't Fix"
+    | "Duplicate"
+    | "Cannot Reproduce"
+    | "Done";
+  requirement_number?: string;
+  test_case_name?: string;
+};
+
+/**
+ * Inserts a new bug into the Bugs table.
+ * @param bug - An object containing all the bug details.
+ * @returns The ID of the newly inserted bug.
+ */
+const addBug = (bug: Bug): number | null => {
+  const sql = `
+    INSERT INTO Bugs (
+      summary, description, steps_to_reproduce, expected_result, actual_result,
+      severity, priority, status, assignee_name, reporter_name, environment,
+      requirement_number, test_case_name
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+  `;
+
+  try {
+    const result = db.runSync(
+      sql,
+      bug.summary,
+      bug.description || null,
+      bug.steps_to_reproduce || null,
+      bug.expected_result || null,
+      bug.actual_result || null,
+      bug.severity,
+      bug.priority,
+      bug.status,
+      bug.assignee_name || null,
+      bug.reporter_name || null,
+      bug.environment || null,
+      bug.requirement_number || null,
+      bug.test_case_name || null
+    );
+
+    console.log(`Bug added with ID: ${result.lastInsertRowId}`);
+    return result.lastInsertRowId;
+  } catch (error) {
+    console.error("Failed to add bug:", error);
+    return null;
+  }
+};
+
+export { addBug, db, initDb };
