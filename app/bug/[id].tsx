@@ -6,8 +6,9 @@ import {
   getTimelineEvents,
   TimelineEvent,
 } from "@/lib/database";
+import { Canvas, Circle, Group, Path, Skia } from "@shopify/react-native-skia";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,7 +20,25 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { runOnJS } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+// --- Tooltip Component ---
+const Tooltip = ({ event, position }) => {
+  if (!event) return null;
+  return (
+    <View
+      style={[styles.tooltipContainer, { top: position.y, left: position.x }]}
+    >
+      <Text style={styles.tooltipAuthor}>{event.author}</Text>
+      <Text style={styles.tooltipComment}>{event.comment}</Text>
+      <Text style={styles.tooltipDate}>
+        {new Date(event.event_at).toLocaleString()}
+      </Text>
+    </View>
+  );
+};
 
 const AddEventModal = ({ visible, onClose, onSave, bugId }: any) => {
   const [author, setAuthor] = useState("");
@@ -103,6 +122,112 @@ const AddEventModal = ({ visible, onClose, onSave, bugId }: any) => {
   );
 };
 
+const SacredTimeline = ({
+  events,
+  onEventPress,
+}: {
+  events: FetchedTimelineEvent[];
+  onEventPress: (
+    event: FetchedTimelineEvent | null,
+    x: number,
+    y: number
+  ) => void;
+}) => {
+  const canvasHeight = events.length * 100 + 50;
+  const canvasWidth = 350;
+
+  const nexusDirections = useMemo(
+    () => events.map(() => (Math.random() > 0.5 ? 1 : -1)),
+    [events]
+  );
+
+  const eventPositions = useMemo(
+    () =>
+      events.map((event, index) => {
+        const yPos = index * 100 + 50;
+        const xPos = canvasWidth * 0.5 + Math.sin(yPos / 50) * 5;
+        const direction = nexusDirections[index];
+        return {
+          x: event.is_nexus_event ? xPos + 120 * direction : xPos,
+          y: yPos,
+          radius: 20,
+          event: event,
+        };
+      }),
+    [events, nexusDirections]
+  );
+
+  // 2. CREATE THE GESTURE HANDLER
+  const tapGesture = Gesture.Tap().onEnd((e) => {
+    "worklet"; // This tells Reanimated to run this function on the UI thread.
+    let hit = false;
+    for (const pos of eventPositions) {
+      const distance = Math.sqrt(
+        Math.pow(e.x - pos.x, 2) + Math.pow(e.y - pos.y, 2)
+      );
+      if (distance < pos.radius) {
+        // 3. USE runOnJS TO SAFELY CALL THE JS-THREAD FUNCTION
+        runOnJS(onEventPress)(pos.event, pos.x, pos.y);
+        hit = true;
+        break;
+      }
+    }
+    if (!hit) {
+      runOnJS(onEventPress)(null, 0, 0); // Hide tooltip if nothing was hit
+    }
+  });
+
+  const mainPath = Skia.Path.Make();
+  mainPath.moveTo(canvasWidth * 0.5, 0);
+  for (let i = 0; i <= canvasHeight; i += 10) {
+    const xOffset = Math.sin(i / 50) * 5;
+    mainPath.lineTo(canvasWidth * 0.5 + xOffset, i);
+  }
+
+  return (
+    <GestureDetector gesture={tapGesture}>
+      <Canvas style={{ width: canvasWidth, height: canvasHeight }}>
+        <Path path={mainPath} style="stroke" strokeWidth={4} color="#63a4ff" />
+        {events.map((event, index) => {
+          const { x, y } = eventPositions[index];
+          const direction = nexusDirections[index];
+
+          if (event.is_nexus_event) {
+            const startX = canvasWidth * 0.5 + Math.sin(y / 50) * 5;
+            const nexusPath = Skia.Path.Make();
+            nexusPath.moveTo(startX, y);
+            nexusPath.cubicTo(
+              startX + 50 * direction,
+              y - 10,
+              startX + 80 * direction,
+              y + 20,
+              x,
+              y
+            );
+            return (
+              <Group key={event.id}>
+                <Path
+                  path={nexusPath}
+                  style="stroke"
+                  strokeWidth={3}
+                  color="#ff453a"
+                />
+                <Circle cx={x} cy={y} r={6} color="#ff453a" />
+              </Group>
+            );
+          } else {
+            return (
+              <Group key={event.id}>
+                <Circle cx={x} cy={y} r={6} color="white" />
+              </Group>
+            );
+          }
+        })}
+      </Canvas>
+    </GestureDetector>
+  );
+};
+
 export default function BugDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -110,6 +235,10 @@ export default function BugDetailScreen() {
   const [timeline, setTimeline] = useState<FetchedTimelineEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
+  const [activeEvent, setActiveEvent] = useState<FetchedTimelineEvent | null>(
+    null
+  );
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   const bugId = Number(id);
 
@@ -119,12 +248,17 @@ export default function BugDetailScreen() {
       const fetchedBug = getBugById(bugId);
       const fetchedTimeline = getTimelineEvents(bugId);
       setBug(fetchedBug);
-      setTimeline(fetchedTimeline);
+      setTimeline(fetchedTimeline.reverse());
       setIsLoading(false);
     }
   }, [bugId]);
 
   useFocusEffect(loadData);
+
+  const handleEventPress = (event, x, y) => {
+    setActiveEvent(event);
+    setTooltipPosition({ x: x - 75, y: y - 80 });
+  };
 
   const handleSaveEvent = (event: TimelineEvent) => {
     addTimelineEvent(event);
@@ -182,14 +316,16 @@ export default function BugDetailScreen() {
             <Text style={styles.addEventButtonText}>+ Add Timeline Event</Text>
           </TouchableOpacity>
 
-          <View style={styles.timelineContainer}>
-            {timeline.map((event, index) => (
-              <TimelineNode
-                key={event.id}
-                event={event}
-                isLast={index === timeline.length - 1}
+          <View style={styles.timelineCanvasContainer}>
+            {timeline.length > 0 ? (
+              <SacredTimeline
+                events={timeline}
+                onEventPress={handleEventPress}
               />
-            ))}
+            ) : (
+              <Text style={styles.noEventsText}>No timeline events yet.</Text>
+            )}
+            <Tooltip event={activeEvent} position={tooltipPosition} />
           </View>
         </View>
       </ScrollView>
@@ -203,38 +339,17 @@ export default function BugDetailScreen() {
   );
 }
 
+const cosmicColors = {
+  primaryGlow: "#00f7ff",
+  nexusGlow: "#ffb400",
+  bgDark: "rgba(10,10,20,0.85)",
+};
+
 // --- Helper Components for Detail Screen ---
 const DetailItem = ({ label, value }: any) => (
   <View style={styles.detailItem}>
     <Text style={styles.detailLabel}>{label}</Text>
     <Text style={styles.detailValue}>{value}</Text>
-  </View>
-);
-
-const TimelineNode = ({ event, isLast }: any) => (
-  <View style={styles.timelineNode}>
-    <View style={styles.timelineGutter}>
-      <View
-        style={[styles.timelineDot, event.is_nexus_event && styles.nexusDot]}
-      />
-      {!isLast && (
-        <View
-          style={[
-            styles.timelineLine,
-            event.is_nexus_event && styles.nexusLineGlow,
-          ]}
-        />
-      )}
-    </View>
-    <View style={styles.timelineContent}>
-      <View style={styles.eventHeader}>
-        <Text style={styles.eventAuthor}>{event.author}</Text>
-        <Text style={styles.eventDate}>
-          {new Date(event.event_at).toLocaleString()}
-        </Text>
-      </View>
-      <Text style={styles.eventComment}>{event.comment}</Text>
-    </View>
   </View>
 );
 
@@ -303,12 +418,19 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOpacity: 0.8,
   },
-  timelineLine: { flex: 1, width: 2, backgroundColor: "#444" },
+  timelineLine: {
+    flex: 1,
+    width: 3,
+    backgroundColor: cosmicColors.primaryGlow,
+    shadowColor: cosmicColors.primaryGlow,
+    shadowRadius: 12,
+    shadowOpacity: 1,
+  },
   nexusLineGlow: {
-    backgroundColor: "#00d8ff",
-    shadowColor: "#00d8ff",
-    shadowRadius: 5,
-    shadowOpacity: 0.7,
+    backgroundColor: cosmicColors.nexusGlow,
+    shadowColor: cosmicColors.nexusGlow,
+    shadowRadius: 16,
+    shadowOpacity: 1,
   },
   timelineContent: { flex: 1, marginLeft: 16, paddingBottom: 24 },
   eventHeader: {
@@ -320,6 +442,51 @@ const styles = StyleSheet.create({
   eventAuthor: { color: "#fff", fontSize: 16, fontWeight: "bold" },
   eventDate: { color: "#a0a0a0", fontSize: 12 },
   eventComment: { color: "#e0e0e0", fontSize: 15 },
+  timelineCanvasContainer: {
+    alignItems: "center",
+    marginTop: 20,
+  },
+  noEventsText: {
+    color: "#a0a0a0",
+    fontSize: 16,
+    textAlign: "center",
+    paddingVertical: 40,
+  },
+  eventText: {
+    position: "absolute",
+    color: "#e0e0e0",
+    fontSize: 15,
+    width: 150,
+    textAlign: "right",
+  },
+  eventTextContainer: {
+    position: "absolute",
+    width: 150,
+  },
+  tooltipContainer: {
+    position: "absolute",
+    backgroundColor: "#1c1c1e",
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#007AFF",
+    width: 150,
+    zIndex: 10,
+  },
+  tooltipAuthor: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  tooltipComment: {
+    color: "#e0e0e0",
+    fontSize: 13,
+    marginVertical: 4,
+  },
+  tooltipDate: {
+    color: "#a0a0a0",
+    fontSize: 10,
+  },
 });
 
 const modalStyles = StyleSheet.create({
