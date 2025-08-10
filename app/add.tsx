@@ -1,5 +1,5 @@
 import CustomPicker from "@/components/CustomPicker";
-import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
@@ -37,7 +37,7 @@ const statusOptions = [
 ];
 
 export default function AddBugScreen() {
-  const navigation = useNavigation();
+  const router = useRouter();
   const [summary, setSummary] = useState("");
   const [description, setDescription] = useState("");
   const [steps, setSteps] = useState("");
@@ -73,8 +73,7 @@ export default function AddBugScreen() {
     const newBugId = addBug(newBug);
 
     if (newBugId) {
-      Alert.alert("Success", `Bug #${newBugId} created successfully.`);
-      navigation.goBack();
+      router.back();
     } else {
       Alert.alert("Error", "Failed to save the bug. Please try again.");
     }

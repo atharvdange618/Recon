@@ -55,6 +55,8 @@ const initDb = () => {
   }
 };
 
+// DATA TYPE DEFINITIONS
+
 export type Bug = {
   id?: number;
   summary: string;
@@ -77,6 +79,25 @@ export type Bug = {
   requirement_number?: string;
   test_case_name?: string;
 };
+
+export type FetchedBug = Bug & {
+  id: number;
+  created_at: string;
+};
+
+export type TimelineEvent = {
+  bug_id: number;
+  author: string;
+  comment: string;
+  is_nexus_event?: boolean;
+};
+
+export type FetchedTimelineEvent = TimelineEvent & {
+  id: number;
+  event_at: string;
+};
+
+// DATABASE FUNCTIONS
 
 /**
  * Inserts a new bug into the Bugs table.
@@ -118,4 +139,85 @@ const addBug = (bug: Bug): number | null => {
   }
 };
 
-export { addBug, db, initDb };
+/**
+ * Fetches all non-archived bugs from the database.
+ * @returns An array of bug objects.
+ */
+const getBugs = (): FetchedBug[] => {
+  const sql = `SELECT * FROM Bugs WHERE is_archived = 0 ORDER BY id DESC;`;
+  try {
+    const results = db.getAllSync<FetchedBug>(sql);
+    return results;
+  } catch (error) {
+    console.error("Failed to fetch bugs:", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches a single bug by its ID.
+ * @param id The ID of the bug to fetch.
+ * @returns The bug object or null if not found.
+ */
+const getBugById = (id: number): FetchedBug | null => {
+  const sql = `SELECT * FROM Bugs WHERE id = ?;`;
+  try {
+    const result = db.getFirstSync<FetchedBug>(sql, id);
+    return result || null;
+  } catch (error) {
+    console.error(`Failed to fetch bug with id ${id}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Fetches all timeline events for a given bug ID.
+ * @param bug_id The ID of the bug.
+ * @returns An array of timeline event objects.
+ */
+const getTimelineEvents = (bug_id: number): FetchedTimelineEvent[] => {
+  const sql = `SELECT * FROM TimelineEvents WHERE bug_id = ? ORDER BY event_at DESC;`;
+  try {
+    const results = db.getAllSync<FetchedTimelineEvent>(sql, bug_id);
+    return results;
+  } catch (error) {
+    console.error(`Failed to fetch timeline events for bug ${bug_id}:`, error);
+    return [];
+  }
+};
+
+/**
+ * Adds a new event to a bug's timeline.
+ * @param event The timeline event object.
+ * @returns The ID of the new event.
+ */
+const addTimelineEvent = (event: TimelineEvent): number | null => {
+  const sql = `
+        INSERT INTO TimelineEvents (bug_id, author, comment, is_nexus_event, event_at)
+        VALUES (?, ?, ?, ?, strftime('%Y-%m-%d %H:%M:%S', 'now', 'localtime'));
+    `;
+  try {
+    const result = db.runSync(
+      sql,
+      event.bug_id,
+      event.author,
+      event.comment,
+      event.is_nexus_event ? 1 : 0
+    );
+    console.log(`Timeline event added with ID: ${result.lastInsertRowId}`);
+    return result.lastInsertRowId;
+  } catch (error) {
+    console.error("Failed to add timeline event:", error);
+    return null;
+  }
+};
+
+export {
+  addBug,
+  addTimelineEvent,
+  db,
+  getBugById,
+  getBugs,
+  getTimelineEvents,
+  initDb,
+};

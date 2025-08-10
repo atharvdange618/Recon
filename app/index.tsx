@@ -1,36 +1,120 @@
-import { initDb } from "@/lib/database";
-import { useRouter } from "expo-router";
-import { useEffect } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+/* eslint-disable react/no-unescaped-entities */
+import { BugCard } from "@/components/BugCard";
+import { FetchedBug, getBugs } from "@/lib/database";
+import { Link, useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function DashboardScreen() {
+  const [bugs, setBugs] = useState<FetchedBug[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    initDb();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      console.log("Dashboard focused, fetching bugs...");
+      setIsLoading(true);
+      const fetchedBugs = getBugs();
+      setBugs(fetchedBugs);
+      setIsLoading(false);
+    }, [])
+  );
+
+  const renderEmptyState = () => (
+    <View style={dashboardStyles.emptyContainer}>
+      <Text style={dashboardStyles.emptyText}>No bugs yet.</Text>
+      <Text style={dashboardStyles.emptySubText}>
+        Tap '+' to add your first bug.
+      </Text>
+    </View>
+  );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Dashboard Screen</Text>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => router.push("/AddBugScreen")}
-      >
-        <Text style={styles.buttonText}>+ Add New Bug</Text>
-      </TouchableOpacity>
-    </View>
+    <SafeAreaView style={dashboardStyles.safeArea}>
+      <View style={dashboardStyles.header}>
+        <Text style={dashboardStyles.title}>Recon</Text>
+        <Link href="/add" asChild>
+          <TouchableOpacity style={dashboardStyles.addButton}>
+            <Text style={dashboardStyles.addButtonText}>+</Text>
+          </TouchableOpacity>
+        </Link>
+      </View>
+
+      {isLoading ? (
+        <ActivityIndicator
+          size="large"
+          color="#fff"
+          style={{ marginTop: 50 }}
+        />
+      ) : (
+        <FlatList
+          data={bugs}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <BugCard
+              bug={item}
+              onPress={() => router.push(`/bug/${item.id}`)}
+            />
+          )}
+          contentContainerStyle={dashboardStyles.listContent}
+          ListEmptyComponent={renderEmptyState}
+        />
+      )}
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
+const dashboardStyles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: "#121212" },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+  },
+  title: {
+    color: "#fff",
+    fontSize: 34,
+    fontWeight: "bold",
+  },
+  addButton: {
+    backgroundColor: "#007AFF",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  addButtonText: {
+    color: "#fff",
+    fontSize: 28,
+    lineHeight: 34,
+  },
+  listContent: {
+    paddingHorizontal: 20,
+  },
+  emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#121212",
+    marginTop: "40%",
   },
-  text: { color: "white", fontSize: 24, marginBottom: 20 },
-  button: { backgroundColor: "#007AFF", padding: 15, borderRadius: 8 },
-  buttonText: { color: "white", fontSize: 18 },
+  emptyText: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "bold",
+  },
+  emptySubText: {
+    color: "#a0a0a0",
+    fontSize: 16,
+    marginTop: 8,
+  },
 });
