@@ -6,9 +6,16 @@ import {
   getTimelineEvents,
   TimelineEvent,
 } from "@/lib/database";
-import { Canvas, Circle, Group, Path, Skia } from "@shopify/react-native-skia";
+import {
+  Blur,
+  Canvas,
+  Circle,
+  Group,
+  Path,
+  Skia,
+} from "@shopify/react-native-skia";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -21,11 +28,18 @@ import {
   View,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { runOnJS } from "react-native-reanimated";
+import {
+  Easing,
+  runOnJS,
+  useDerivedValue,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // --- Tooltip Component ---
-const Tooltip = ({ event, position }) => {
+const Tooltip = ({ event, position }: any) => {
   if (!event) return null;
   return (
     <View
@@ -136,11 +150,29 @@ const SacredTimeline = ({
   const canvasHeight = events.length * 100 + 50;
   const canvasWidth = 350;
 
+  const pulseAnimation = useSharedValue(0);
+
+  useEffect(() => {
+    pulseAnimation.value = withRepeat(
+      withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+  }, [pulseAnimation]);
+
+  const blur = useDerivedValue(
+    () => 4 + pulseAnimation.value * 4,
+    [pulseAnimation]
+  );
+  const nexusOpacity = useDerivedValue(
+    () => pulseAnimation.value,
+    [pulseAnimation]
+  );
+
   const nexusDirections = useMemo(
     () => events.map(() => (Math.random() > 0.5 ? 1 : -1)),
     [events]
   );
-
   const eventPositions = useMemo(
     () =>
       events.map((event, index) => {
@@ -157,23 +189,21 @@ const SacredTimeline = ({
     [events, nexusDirections]
   );
 
-  // 2. CREATE THE GESTURE HANDLER
   const tapGesture = Gesture.Tap().onEnd((e) => {
-    "worklet"; // This tells Reanimated to run this function on the UI thread.
+    "worklet";
     let hit = false;
     for (const pos of eventPositions) {
       const distance = Math.sqrt(
         Math.pow(e.x - pos.x, 2) + Math.pow(e.y - pos.y, 2)
       );
       if (distance < pos.radius) {
-        // 3. USE runOnJS TO SAFELY CALL THE JS-THREAD FUNCTION
         runOnJS(onEventPress)(pos.event, pos.x, pos.y);
         hit = true;
         break;
       }
     }
     if (!hit) {
-      runOnJS(onEventPress)(null, 0, 0); // Hide tooltip if nothing was hit
+      runOnJS(onEventPress)(null, 0, 0);
     }
   });
 
@@ -187,11 +217,25 @@ const SacredTimeline = ({
   return (
     <GestureDetector gesture={tapGesture}>
       <Canvas style={{ width: canvasWidth, height: canvasHeight }}>
-        <Path path={mainPath} style="stroke" strokeWidth={4} color="#63a4ff" />
+        <Group>
+          <Blur blur={blur} />
+          <Path
+            path={mainPath}
+            style="stroke"
+            strokeWidth={5}
+            color="#00d8ff"
+          />
+        </Group>
+        <Path
+          path={mainPath}
+          style="stroke"
+          strokeWidth={2.5}
+          color="#c1efff"
+        />
+
         {events.map((event, index) => {
           const { x, y } = eventPositions[index];
           const direction = nexusDirections[index];
-
           if (event.is_nexus_event) {
             const startX = canvasWidth * 0.5 + Math.sin(y / 50) * 5;
             const nexusPath = Skia.Path.Make();
@@ -206,10 +250,19 @@ const SacredTimeline = ({
             );
             return (
               <Group key={event.id}>
+                <Group opacity={nexusOpacity}>
+                  <Blur blur={8} />
+                  <Path
+                    path={nexusPath}
+                    style="stroke"
+                    strokeWidth={4}
+                    color="#ff9f0a"
+                  />
+                </Group>
                 <Path
                   path={nexusPath}
                   style="stroke"
-                  strokeWidth={3}
+                  strokeWidth={2}
                   color="#ff453a"
                 />
                 <Circle cx={x} cy={y} r={6} color="#ff453a" />
@@ -255,7 +308,7 @@ export default function BugDetailScreen() {
 
   useFocusEffect(loadData);
 
-  const handleEventPress = (event, x, y) => {
+  const handleEventPress = (event: any, x: any, y: any) => {
     setActiveEvent(event);
     setTooltipPosition({ x: x - 75, y: y - 80 });
   };
@@ -287,11 +340,7 @@ export default function BugDetailScreen() {
         <Text style={styles.headerTitle}>
           BUG-{String(bug.id).padStart(3, "0")}
         </Text>
-        <TouchableOpacity
-          onPress={() => {
-            console.log("Edit bug functionality not implemented yet.");
-          }}
-        >
+        <TouchableOpacity onPress={() => router.push(`/edit/${bug.id}`)}>
           <Text style={styles.editButton}>Edit</Text>
         </TouchableOpacity>
       </View>

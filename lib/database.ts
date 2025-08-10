@@ -212,6 +212,34 @@ const addTimelineEvent = (event: TimelineEvent): number | null => {
   }
 };
 
+/**
+ * Updates an existing bug in the database.
+ * @param id The ID of the bug to update.
+ * @param bug An object containing the fields to update.
+ * @returns True if the update was successful, false otherwise.
+ */
+const updateBug = (id: number, bug: Partial<Bug>): boolean => {
+  const fields = Object.keys(bug);
+  const values = Object.values(bug);
+
+  if (fields.length === 0) {
+    console.log("No fields to update.");
+    return false;
+  }
+
+  const setClause = fields.map((field) => `${field} = ?`).join(", ");
+  const sql = `UPDATE Bugs SET ${setClause} WHERE id = ?;`;
+
+  try {
+    db.runSync(sql, ...values, id);
+    console.log(`Bug with ID: ${id} updated successfully.`);
+    return true;
+  } catch (error) {
+    console.error(`Failed to update bug with ID ${id}:`, error);
+    return false;
+  }
+};
+
 export {
   addBug,
   addTimelineEvent,
@@ -220,4 +248,5 @@ export {
   getBugs,
   getTimelineEvents,
   initDb,
+  updateBug,
 };
