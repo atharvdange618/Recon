@@ -1,8 +1,16 @@
 import CustomPicker from "@/components/CustomPicker";
+import {
+  priorityOptions,
+  resolutionOptions,
+  severityOptions,
+  statusOptions,
+} from "@/lib/options";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -13,37 +21,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { addBug, Bug } from "../lib/database";
-
-const severityOptions = [
-  { label: "Blocker", value: "Blocker" },
-  { label: "Critical", value: "Critical" },
-  { label: "Major", value: "Major" },
-  { label: "Minor", value: "Minor" },
-];
-
-const priorityOptions = [
-  { label: "Critical", value: "Critical" },
-  { label: "High", value: "High" },
-  { label: "Medium", value: "Medium" },
-  { label: "Low", value: "Low" },
-];
-
-const statusOptions = [
-  { label: "Reported", value: "Reported" },
-  { label: "In Progress", value: "In Progress" },
-  { label: "On Hold", value: "On Hold" },
-  { label: "Resolved", value: "Resolved" },
-  { label: "Closed", value: "Closed" },
-];
-
-const resolutionOptions = [
-  { label: "None", value: "" },
-  { label: "Fixed", value: "Fixed" },
-  { label: "Won't Fix", value: "Won't Fix" },
-  { label: "Duplicate", value: "Duplicate" },
-  { label: "Cannot Reproduce", value: "Cannot Reproduce" },
-  { label: "Done", value: "Done" },
-];
 
 export default function AddBugScreen() {
   const router = useRouter();
@@ -96,156 +73,161 @@ export default function AddBugScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
-        <Text style={styles.header}>Create New Bug</Text>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.contentContainer}
+        >
+          <Text style={styles.header}>Create New Bug</Text>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Summary</Text>
-          <TextInput
-            style={styles.input}
-            value={summary}
-            onChangeText={setSummary}
-            placeholder="e.g., User login fails on Android"
-            placeholderTextColor="#777"
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Summary</Text>
+            <TextInput
+              style={styles.input}
+              value={summary}
+              onChangeText={setSummary}
+              placeholder="e.g., User login fails on Android"
+              placeholderTextColor="#777"
+            />
+          </View>
+
+          <CustomPicker
+            label="Status"
+            options={statusOptions}
+            selectedValue={status}
+            onValueChange={setStatus}
           />
-        </View>
-
-        <CustomPicker
-          label="Status"
-          options={statusOptions}
-          selectedValue={status}
-          onValueChange={setStatus}
-        />
-        <CustomPicker
-          label="Priority"
-          options={priorityOptions}
-          selectedValue={priority}
-          onValueChange={setPriority}
-        />
-        <CustomPicker
-          label="Severity"
-          options={severityOptions}
-          selectedValue={severity}
-          onValueChange={setSeverity}
-        />
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Assignee</Text>
-          <TextInput
-            style={styles.input}
-            value={assignee}
-            onChangeText={setAssignee}
-            placeholder="e.g., John Doe"
-            placeholderTextColor="#777"
+          <CustomPicker
+            label="Priority"
+            options={priorityOptions}
+            selectedValue={priority}
+            onValueChange={setPriority}
           />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Reporter</Text>
-          <TextInput
-            style={styles.input}
-            value={reporter}
-            onChangeText={setReporter}
-            placeholder="Your name"
-            placeholderTextColor="#777"
+          <CustomPicker
+            label="Severity"
+            options={severityOptions}
+            selectedValue={severity}
+            onValueChange={setSeverity}
           />
-        </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Environment</Text>
-          <TextInput
-            style={styles.input}
-            value={environment}
-            onChangeText={setEnvironment}
-            placeholder="e.g., Production, iOS v2.3"
-            placeholderTextColor="#777"
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Assignee</Text>
+            <TextInput
+              style={styles.input}
+              value={assignee}
+              onChangeText={setAssignee}
+              placeholder="e.g., John Doe"
+              placeholderTextColor="#777"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Reporter</Text>
+            <TextInput
+              style={styles.input}
+              value={reporter}
+              onChangeText={setReporter}
+              placeholder="Your name"
+              placeholderTextColor="#777"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Environment</Text>
+            <TextInput
+              style={styles.input}
+              value={environment}
+              onChangeText={setEnvironment}
+              placeholder="e.g., Production, iOS v2.3"
+              placeholderTextColor="#777"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Description</Text>
+            <TextInput
+              style={[styles.input, styles.multiline]}
+              value={description}
+              onChangeText={setDescription}
+              placeholder="High-level overview of the bug"
+              placeholderTextColor="#777"
+              multiline
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Steps to Reproduce</Text>
+            <TextInput
+              style={[styles.input, styles.multiline]}
+              value={steps}
+              onChangeText={setSteps}
+              placeholder="1. Go to Login screen..."
+              placeholderTextColor="#777"
+              multiline
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Expected Result</Text>
+            <TextInput
+              style={[styles.input, styles.multiline]}
+              value={expected}
+              onChangeText={setExpected}
+              placeholder="User should be logged in successfully."
+              placeholderTextColor="#777"
+              multiline
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Actual Result</Text>
+            <TextInput
+              style={[styles.input, styles.multiline]}
+              value={actual}
+              onChangeText={setActual}
+              placeholder="App crashes or shows an error."
+              placeholderTextColor="#777"
+              multiline
+            />
+          </View>
+
+          <CustomPicker
+            label="Resolution"
+            options={resolutionOptions}
+            selectedValue={resolution}
+            onValueChange={(value) => setResolution(value as Bug["resolution"])}
           />
-        </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Description</Text>
-          <TextInput
-            style={[styles.input, styles.multiline]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="High-level overview of the bug"
-            placeholderTextColor="#777"
-            multiline
-          />
-        </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Requirement Number</Text>
+            <TextInput
+              style={styles.input}
+              value={requirementNumber}
+              onChangeText={setRequirementNumber}
+              placeholder="e.g., REQ-123"
+              placeholderTextColor="#777"
+            />
+          </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Steps to Reproduce</Text>
-          <TextInput
-            style={[styles.input, styles.multiline]}
-            value={steps}
-            onChangeText={setSteps}
-            placeholder="1. Go to Login screen..."
-            placeholderTextColor="#777"
-            multiline
-          />
-        </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Test Case Name</Text>
+            <TextInput
+              style={styles.input}
+              value={testCaseName}
+              onChangeText={setTestCaseName}
+              placeholder="e.g., TC-456"
+              placeholderTextColor="#777"
+            />
+          </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Expected Result</Text>
-          <TextInput
-            style={[styles.input, styles.multiline]}
-            value={expected}
-            onChangeText={setExpected}
-            placeholder="User should be logged in successfully."
-            placeholderTextColor="#777"
-            multiline
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Actual Result</Text>
-          <TextInput
-            style={[styles.input, styles.multiline]}
-            value={actual}
-            onChangeText={setActual}
-            placeholder="App crashes or shows an error."
-            placeholderTextColor="#777"
-            multiline
-          />
-        </View>
-
-        <CustomPicker
-          label="Resolution"
-          options={resolutionOptions}
-          selectedValue={resolution}
-          onValueChange={(value) => setResolution(value as Bug["resolution"])}
-        />
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Requirement Number</Text>
-          <TextInput
-            style={styles.input}
-            value={requirementNumber}
-            onChangeText={setRequirementNumber}
-            placeholder="e.g., REQ-123"
-            placeholderTextColor="#777"
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Test Case Name</Text>
-          <TextInput
-            style={styles.input}
-            value={testCaseName}
-            onChangeText={setTestCaseName}
-            placeholder="e.g., TC-456"
-            placeholderTextColor="#777"
-          />
-        </View>
-
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save Bug</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <Text style={styles.saveButtonText}>Save Bug</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -291,7 +273,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     backgroundColor: "#007AFF",
-    padding: 18,
+    padding: 14,
     borderRadius: 8,
     alignItems: "center",
     marginTop: 20,

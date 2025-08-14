@@ -1,3 +1,8 @@
+import { AddEventModal } from "@/components/AddEventModal";
+import { CollapsibleSection } from "@/components/CollapsibleSection";
+import { DetailItem } from "@/components/Helpers";
+import { SacredTimeline } from "@/components/SacredTimeline";
+import { Tooltip } from "@/components/Tooltip";
 import {
   addTimelineEvent,
   FetchedBug,
@@ -6,280 +11,26 @@ import {
   getTimelineEvents,
   TimelineEvent,
 } from "@/lib/database";
-import {
-  Blur,
-  Canvas,
-  Circle,
-  Group,
-  Path,
-  Skia,
-} from "@shopify/react-native-skia";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
-  Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
+  UIManager,
   View,
 } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import {
-  Easing,
-  runOnJS,
-  useDerivedValue,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// --- Tooltip Component ---
-const Tooltip = ({ event, position }: any) => {
-  if (!event) return null;
-  return (
-    <View
-      style={[styles.tooltipContainer, { top: position.y, left: position.x }]}
-    >
-      <Text style={styles.tooltipAuthor}>{event.author}</Text>
-      <Text style={styles.tooltipComment}>{event.comment}</Text>
-      <Text style={styles.tooltipDate}>
-        {new Date(event.event_at).toLocaleString()}
-      </Text>
-    </View>
-  );
-};
-
-const AddEventModal = ({ visible, onClose, onSave, bugId }: any) => {
-  const [author, setAuthor] = useState("");
-  const [comment, setComment] = useState("");
-  const [isNexus, setIsNexus] = useState(false);
-
-  const handleSave = () => {
-    if (!author.trim() || !comment.trim()) {
-      Alert.alert("Validation Error", "Author and Comment are required.");
-      return;
-    }
-    const newEvent: TimelineEvent = {
-      bug_id: bugId,
-      author,
-      comment,
-      is_nexus_event: isNexus,
-    };
-    onSave(newEvent);
-    setAuthor("");
-    setComment("");
-    setIsNexus(false);
-  };
-
-  return (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={visible}
-      onRequestClose={onClose}
-    >
-      <View style={modalStyles.centeredView}>
-        <View style={modalStyles.modalView}>
-          <Text style={modalStyles.modalTitle}>Add Timeline Event</Text>
-          <TextInput
-            style={modalStyles.input}
-            placeholder="Author (e.g., John Doe)"
-            placeholderTextColor="#777"
-            value={author}
-            onChangeText={setAuthor}
-          />
-          <TextInput
-            style={[modalStyles.input, { height: 100 }]}
-            placeholder="Comment..."
-            placeholderTextColor="#777"
-            value={comment}
-            onChangeText={setComment}
-            multiline
-          />
-          <TouchableOpacity
-            style={modalStyles.checkboxContainer}
-            onPress={() => setIsNexus(!isNexus)}
-          >
-            <View
-              style={[
-                modalStyles.checkbox,
-                isNexus && modalStyles.checkboxChecked,
-              ]}
-            >
-              {isNexus && <Text style={modalStyles.checkboxCheck}>✓</Text>}
-            </View>
-            <Text style={modalStyles.checkboxLabel}>Mark as Nexus Event</Text>
-          </TouchableOpacity>
-
-          <View style={modalStyles.buttonRow}>
-            <TouchableOpacity
-              style={[modalStyles.button, modalStyles.buttonClose]}
-              onPress={onClose}
-            >
-              <Text style={modalStyles.textStyle}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[modalStyles.button, modalStyles.buttonSave]}
-              onPress={handleSave}
-            >
-              <Text style={modalStyles.textStyle}>Save</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-};
-
-const SacredTimeline = ({
-  events,
-  onEventPress,
-}: {
-  events: FetchedTimelineEvent[];
-  onEventPress: (
-    event: FetchedTimelineEvent | null,
-    x: number,
-    y: number
-  ) => void;
-}) => {
-  const canvasHeight = events.length * 100 + 50;
-  const canvasWidth = 350;
-
-  const pulseAnimation = useSharedValue(0);
-
-  useEffect(() => {
-    pulseAnimation.value = withRepeat(
-      withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-  }, [pulseAnimation]);
-
-  const blur = useDerivedValue(
-    () => 4 + pulseAnimation.value * 4,
-    [pulseAnimation]
-  );
-  const nexusOpacity = useDerivedValue(
-    () => pulseAnimation.value,
-    [pulseAnimation]
-  );
-
-  const nexusDirections = useMemo(
-    () => events.map(() => (Math.random() > 0.5 ? 1 : -1)),
-    [events]
-  );
-  const eventPositions = useMemo(
-    () =>
-      events.map((event, index) => {
-        const yPos = index * 100 + 50;
-        const xPos = canvasWidth * 0.5 + Math.sin(yPos / 50) * 5;
-        const direction = nexusDirections[index];
-        return {
-          x: event.is_nexus_event ? xPos + 120 * direction : xPos,
-          y: yPos,
-          radius: 20,
-          event: event,
-        };
-      }),
-    [events, nexusDirections]
-  );
-
-  const tapGesture = Gesture.Tap().onEnd((e) => {
-    "worklet";
-    let hit = false;
-    for (const pos of eventPositions) {
-      const distance = Math.sqrt(
-        Math.pow(e.x - pos.x, 2) + Math.pow(e.y - pos.y, 2)
-      );
-      if (distance < pos.radius) {
-        runOnJS(onEventPress)(pos.event, pos.x, pos.y);
-        hit = true;
-        break;
-      }
-    }
-    if (!hit) {
-      runOnJS(onEventPress)(null, 0, 0);
-    }
-  });
-
-  const mainPath = Skia.Path.Make();
-  mainPath.moveTo(canvasWidth * 0.5, 0);
-  for (let i = 0; i <= canvasHeight; i += 10) {
-    const xOffset = Math.sin(i / 50) * 5;
-    mainPath.lineTo(canvasWidth * 0.5 + xOffset, i);
-  }
-
-  return (
-    <GestureDetector gesture={tapGesture}>
-      <Canvas style={{ width: canvasWidth, height: canvasHeight }}>
-        <Group>
-          <Blur blur={blur} />
-          <Path
-            path={mainPath}
-            style="stroke"
-            strokeWidth={5}
-            color="#00d8ff"
-          />
-        </Group>
-        <Path
-          path={mainPath}
-          style="stroke"
-          strokeWidth={2.5}
-          color="#c1efff"
-        />
-
-        {events.map((event, index) => {
-          const { x, y } = eventPositions[index];
-          const direction = nexusDirections[index];
-          if (event.is_nexus_event) {
-            const startX = canvasWidth * 0.5 + Math.sin(y / 50) * 5;
-            const nexusPath = Skia.Path.Make();
-            nexusPath.moveTo(startX, y);
-            nexusPath.cubicTo(
-              startX + 50 * direction,
-              y - 10,
-              startX + 80 * direction,
-              y + 20,
-              x,
-              y
-            );
-            return (
-              <Group key={event.id}>
-                <Group opacity={nexusOpacity}>
-                  <Blur blur={8} />
-                  <Path
-                    path={nexusPath}
-                    style="stroke"
-                    strokeWidth={4}
-                    color="#ff9f0a"
-                  />
-                </Group>
-                <Path
-                  path={nexusPath}
-                  style="stroke"
-                  strokeWidth={2}
-                  color="#ff453a"
-                />
-                <Circle cx={x} cy={y} r={6} color="#ff453a" />
-              </Group>
-            );
-          } else {
-            return (
-              <Group key={event.id}>
-                <Circle cx={x} cy={y} r={6} color="white" />
-              </Group>
-            );
-          }
-        })}
-      </Canvas>
-    </GestureDetector>
-  );
-};
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function BugDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -353,10 +104,33 @@ export default function BugDetailScreen() {
             <DetailItem label="Priority" value={bug.priority} />
             <DetailItem label="Severity" value={bug.severity} />
             <DetailItem label="Assignee" value={bug.assignee_name || "N/A"} />
+            <DetailItem label="Reporter" value={bug.reporter_name || "N/A"} />
+            <DetailItem label="Environment" value={bug.environment || "N/A"} />
           </View>
         </View>
 
-        <View style={styles.timelineSection}>
+        {bug.description && (
+          <CollapsibleSection title="Description">
+            <Text style={styles.sectionText}>{bug.description}</Text>
+          </CollapsibleSection>
+        )}
+        {bug.steps_to_reproduce && (
+          <CollapsibleSection title="Steps to Reproduce">
+            <Text style={styles.sectionText}>{bug.steps_to_reproduce}</Text>
+          </CollapsibleSection>
+        )}
+        {bug.expected_result && (
+          <CollapsibleSection title="Expected Result">
+            <Text style={styles.sectionText}>{bug.expected_result}</Text>
+          </CollapsibleSection>
+        )}
+        {bug.actual_result && (
+          <CollapsibleSection title="Actual Result">
+            <Text style={styles.sectionText}>{bug.actual_result}</Text>
+          </CollapsibleSection>
+        )}
+
+        <View>
           <Text style={styles.sectionTitle}>Sacred Timeline</Text>
           <TouchableOpacity
             style={styles.addEventButton}
@@ -394,14 +168,6 @@ const cosmicColors = {
   bgDark: "rgba(10,10,20,0.85)",
 };
 
-// --- Helper Components for Detail Screen ---
-const DetailItem = ({ label, value }: any) => (
-  <View style={styles.detailItem}>
-    <Text style={styles.detailLabel}>{label}</Text>
-    <Text style={styles.detailValue}>{value}</Text>
-  </View>
-);
-
 // --- STYLES ---
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#121212" },
@@ -434,10 +200,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
-  detailItem: { width: "48%", marginBottom: 12 },
-  detailLabel: { color: "#a0a0a0", fontSize: 14, marginBottom: 4 },
-  detailValue: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  timelineSection: {},
+
   sectionTitle: {
     color: "#fff",
     fontSize: 24,
@@ -466,6 +229,12 @@ const styles = StyleSheet.create({
     shadowColor: "#ff9f0a",
     shadowRadius: 8,
     shadowOpacity: 0.8,
+  },
+  sectionText: {
+    color: "#e0e0e0",
+    fontSize: 15,
+    lineHeight: 22,
+    paddingTop: 10,
   },
   timelineLine: {
     flex: 1,
@@ -512,99 +281,4 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: 150,
   },
-  tooltipContainer: {
-    position: "absolute",
-    backgroundColor: "#1c1c1e",
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#007AFF",
-    width: 150,
-    zIndex: 10,
-  },
-  tooltipAuthor: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  tooltipComment: {
-    color: "#e0e0e0",
-    fontSize: 13,
-    marginVertical: 4,
-  },
-  tooltipDate: {
-    color: "#a0a0a0",
-    fontSize: 10,
-  },
-});
-
-const modalStyles = StyleSheet.create({
-  centeredView: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
-  },
-  modalView: {
-    width: "90%",
-    backgroundColor: "#2c2c2e",
-    borderRadius: 20,
-    padding: 25,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 20,
-  },
-  input: {
-    backgroundColor: "#333",
-    width: "100%",
-    borderRadius: 8,
-    padding: 15,
-    color: "#fff",
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: "#555",
-    marginBottom: 15,
-  },
-  checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    marginBottom: 20,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: "#007AFF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkboxChecked: { backgroundColor: "#007AFF" },
-  checkboxCheck: { color: "#fff", fontWeight: "bold" },
-  checkboxLabel: { color: "#fff", marginLeft: 12, fontSize: 16 },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-  },
-  button: {
-    borderRadius: 8,
-    padding: 12,
-    elevation: 2,
-    flex: 1,
-    marginHorizontal: 5,
-  },
-  buttonClose: { backgroundColor: "#555" },
-  buttonSave: { backgroundColor: "#007AFF" },
-  textStyle: { color: "white", fontWeight: "bold", textAlign: "center" },
 });
