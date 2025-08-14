@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   LayoutAnimation,
   StyleSheet,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { COLORS, FONTS, SIZES } from "../lib/theme";
 
 export const CollapsibleSection = ({
@@ -23,42 +24,42 @@ export const CollapsibleSection = ({
   };
 
   return (
-    <View style={styles.collapsibleContainer}>
-      <TouchableOpacity onPress={toggleExpand} style={styles.collapsibleHeader}>
-        <Text style={styles.collapsibleTitle}>{title}</Text>
-        <Text style={styles.collapsibleIcon}>{isExpanded ? "−" : "+"}</Text>
+    <View style={styles.container}>
+      <TouchableOpacity onPress={toggleExpand} style={styles.header}>
+        <Text style={styles.title}>{title}</Text>
+        <Feather 
+          name={isExpanded ? "chevron-down" : "chevron-right"} 
+          size={24} 
+          color={COLORS.textSecondary} 
+        />
       </TouchableOpacity>
-      {isExpanded && <View style={styles.collapsibleContent}>{children}</View>}
+      {isExpanded && <View style={styles.content}>{children}</View>}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  collapsibleContainer: {
+  container: {
     backgroundColor: COLORS.card,
     borderRadius: SIZES.radius,
-    marginBottom: SIZES.base * 1.5,
+    marginBottom: SIZES.padding,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  collapsibleHeader: {
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: SIZES.base * 2,
+    padding: SIZES.padding,
   },
-  collapsibleTitle: {
+  title: {
     ...FONTS.h3,
     color: COLORS.text,
     fontWeight: "bold",
   },
-  collapsibleIcon: {
-    ...FONTS.h2,
-    color: COLORS.textSecondary,
-    fontWeight: "bold",
-  },
-  collapsibleContent: {
-    paddingHorizontal: SIZES.base * 2,
-    paddingBottom: SIZES.base * 2,
+  content: {
+    padding: SIZES.padding,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
   },

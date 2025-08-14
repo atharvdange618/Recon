@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS, FONTS, SIZES } from "../lib/theme";
+import { Feather } from "@expo/vector-icons";
 
 export default function DashboardScreen() {
   const [bugs, setBugs] = useState<FetchedBug[]>([]);
@@ -44,7 +45,7 @@ export default function DashboardScreen() {
         <Text style={dashboardStyles.title}>Recon</Text>
         <Link href="/add" asChild>
           <TouchableOpacity style={dashboardStyles.addButton}>
-            <Text style={dashboardStyles.addButtonText}>+</Text>
+            <Feather name="plus" size={24} color={COLORS.white} />
           </TouchableOpacity>
         </Link>
       </View>

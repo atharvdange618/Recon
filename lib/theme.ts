@@ -30,6 +30,8 @@ export const COLORS = {
   success: "#30d158",
   error: "#ff453a",
   warning: "#ff9f0a",
+  accent: "#008060",
+  secondaryAccent: "#FFD700",
 };
 
 export const SIZES = {

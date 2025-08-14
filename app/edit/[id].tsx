@@ -6,6 +6,7 @@ import {
   severityOptions,
   statusOptions,
 } from "@/lib/options";
+import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -144,11 +145,11 @@ export default function EditBugScreen() {
       >
         <View style={styles.headerContainer}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.closeButton}>Cancel</Text>
+            <Feather name="x" size={24} color={COLORS.primary} />
           </TouchableOpacity>
           <Text style={styles.header}>Edit Bug</Text>
           <TouchableOpacity onPress={handleUpdate}>
-            <Text style={styles.saveButtonTextHeader}>Save</Text>
+            <Feather name="save" size={24} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
         <ScrollView

@@ -131,8 +131,17 @@ const addBug = (bug: Bug): number | null => {
       bug.test_case_name || null
     );
 
-    console.log(`Bug added with ID: ${result.lastInsertRowId}`);
-    return result.lastInsertRowId;
+    const newBugId = result.lastInsertRowId;
+    console.log(`Bug added with ID: ${newBugId}`);
+
+    addTimelineEvent({
+      bug_id: newBugId,
+      author: bug.reporter_name || "System",
+      comment: "Bug reported",
+      is_nexus_event: false,
+    });
+
+    return newBugId;
   } catch (error) {
     console.error("Failed to add bug:", error);
     return null;
@@ -219,6 +228,12 @@ const addTimelineEvent = (event: TimelineEvent): number | null => {
  * @returns True if the update was successful, false otherwise.
  */
 const updateBug = (id: number, bug: Partial<Bug>): boolean => {
+  const oldBug = getBugById(id);
+  if (!oldBug) {
+    console.error(`Failed to find bug with ID ${id} for update.`);
+    return false;
+  }
+
   const fields = Object.keys(bug);
   const values = Object.values(bug);
 
@@ -233,6 +248,31 @@ const updateBug = (id: number, bug: Partial<Bug>): boolean => {
   try {
     db.runSync(sql, ...values, id);
     console.log(`Bug with ID: ${id} updated successfully.`);
+
+    if (bug.status && bug.status !== oldBug.status) {
+      addTimelineEvent({
+        bug_id: id,
+        author: "System",
+        comment: `Status changed from ${oldBug.status} to ${bug.status}`,
+        is_nexus_event: ["On Hold", "Closed"].includes(bug.status),
+      });
+    }
+    if (bug.priority && bug.priority !== oldBug.priority) {
+      addTimelineEvent({
+        bug_id: id,
+        author: "System",
+        comment: `Priority changed from ${oldBug.priority} to ${bug.priority}`,
+      });
+    }
+    if (bug.severity && bug.severity !== oldBug.severity) {
+      addTimelineEvent({
+        bug_id: id,
+        author: "System",
+        comment: `Severity changed from ${oldBug.severity} to ${bug.severity}`,
+        is_nexus_event: ["Blocker", "Critical"].includes(bug.severity),
+      });
+    }
+
     return true;
   } catch (error) {
     console.error(`Failed to update bug with ID ${id}:`, error);

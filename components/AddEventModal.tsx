@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { COLORS, FONTS, SIZES } from "../lib/theme";
+import { Feather } from "@expo/vector-icons";
 
 export const AddEventModal = ({ visible, onClose, onSave, bugId }: any) => {
   const [author, setAuthor] = useState("");
@@ -78,12 +79,14 @@ export const AddEventModal = ({ visible, onClose, onSave, bugId }: any) => {
               style={[modalStyles.button, modalStyles.buttonClose]}
               onPress={onClose}
             >
+              <Feather name="x" size={20} color={COLORS.white} />
               <Text style={modalStyles.textStyle}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[modalStyles.button, modalStyles.buttonSave]}
               onPress={handleSave}
             >
+              <Feather name="save" size={20} color={COLORS.white} />
               <Text style={modalStyles.textStyle}>Save</Text>
             </TouchableOpacity>
           </View>
@@ -157,8 +160,11 @@ const modalStyles = StyleSheet.create({
     elevation: 2,
     flex: 1,
     marginHorizontal: SIZES.base / 2,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonClose: { backgroundColor: COLORS.darkGray },
   buttonSave: { backgroundColor: COLORS.primary },
-  textStyle: { ...FONTS.h4, color: "white", fontWeight: "bold", textAlign: "center" },
+  textStyle: { ...FONTS.h4, color: "white", fontWeight: "bold", textAlign: "center", marginLeft: SIZES.base / 2 },
 });

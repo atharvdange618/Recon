@@ -22,6 +22,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { addBug, Bug } from "../lib/database";
 import { COLORS, FONTS, SIZES } from "../lib/theme";
+import { Feather } from "@expo/vector-icons";
 
 export default function AddBugScreen() {
   const router = useRouter();
@@ -80,11 +81,11 @@ export default function AddBugScreen() {
       >
         <View style={styles.headerContainer}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.closeButton}>Cancel</Text>
+            <Feather name="x" size={24} color={COLORS.primary} />
           </TouchableOpacity>
           <Text style={styles.header}>Create Bug</Text>
           <TouchableOpacity onPress={handleSave}>
-            <Text style={styles.saveButtonTextHeader}>Save</Text>
+            <Feather name="save" size={24} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
         <ScrollView
