@@ -36,6 +36,15 @@ const statusOptions = [
   { label: "Closed", value: "Closed" },
 ];
 
+const resolutionOptions = [
+  { label: "None", value: "" },
+  { label: "Fixed", value: "Fixed" },
+  { label: "Won't Fix", value: "Won't Fix" },
+  { label: "Duplicate", value: "Duplicate" },
+  { label: "Cannot Reproduce", value: "Cannot Reproduce" },
+  { label: "Done", value: "Done" },
+];
+
 export default function AddBugScreen() {
   const router = useRouter();
   const [summary, setSummary] = useState("");
@@ -49,6 +58,9 @@ export default function AddBugScreen() {
   const [assignee, setAssignee] = useState("");
   const [reporter, setReporter] = useState("");
   const [environment, setEnvironment] = useState("");
+  const [resolution, setResolution] = useState<Bug["resolution"] | "">("");
+  const [requirementNumber, setRequirementNumber] = useState("");
+  const [testCaseName, setTestCaseName] = useState("");
 
   const handleSave = () => {
     if (!summary.trim()) {
@@ -68,6 +80,9 @@ export default function AddBugScreen() {
       assignee_name: assignee,
       reporter_name: reporter,
       environment,
+      resolution: resolution ? (resolution as Bug["resolution"]) : undefined,
+      requirement_number: requirementNumber,
+      test_case_name: testCaseName,
     };
 
     const newBugId = addBug(newBug);
@@ -195,6 +210,35 @@ export default function AddBugScreen() {
             placeholder="App crashes or shows an error."
             placeholderTextColor="#777"
             multiline
+          />
+        </View>
+
+        <CustomPicker
+          label="Resolution"
+          options={resolutionOptions}
+          selectedValue={resolution}
+          onValueChange={(value) => setResolution(value as Bug["resolution"])}
+        />
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Requirement Number</Text>
+          <TextInput
+            style={styles.input}
+            value={requirementNumber}
+            onChangeText={setRequirementNumber}
+            placeholder="e.g., REQ-123"
+            placeholderTextColor="#777"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Test Case Name</Text>
+          <TextInput
+            style={styles.input}
+            value={testCaseName}
+            onChangeText={setTestCaseName}
+            placeholder="e.g., TC-456"
+            placeholderTextColor="#777"
           />
         </View>
 
