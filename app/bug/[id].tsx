@@ -24,6 +24,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { COLORS, FONTS, SIZES } from "../../lib/theme";
 
 if (
   Platform.OS === "android" &&
@@ -71,7 +72,7 @@ export default function BugDetailScreen() {
   };
 
   if (isLoading) {
-    return <ActivityIndicator size="large" color="#fff" style={{ flex: 1 }} />;
+    return <ActivityIndicator size="large" color={COLORS.primary} style={{ flex: 1 }} />;
   }
 
   if (!bug) {
@@ -162,123 +163,65 @@ export default function BugDetailScreen() {
   );
 }
 
-const cosmicColors = {
-  primaryGlow: "#00f7ff",
-  nexusGlow: "#ffb400",
-  bgDark: "rgba(10,10,20,0.85)",
-};
-
-// --- STYLES ---
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#121212" },
-  container: { padding: 20, paddingBottom: 50 },
+  safeArea: { flex: 1, backgroundColor: COLORS.background },
+  container: { padding: SIZES.padding, paddingBottom: 50 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: SIZES.base,
   },
-  backButton: { color: "#007AFF", fontSize: 17 },
-  headerTitle: { color: "#fff", fontSize: 17, fontWeight: "bold" },
-  editButton: { color: "#007AFF", fontSize: 17 },
-  errorText: { color: "red", textAlign: "center", marginTop: 50, fontSize: 18 },
+  backButton: { ...FONTS.body3, color: COLORS.primary },
+  headerTitle: { ...FONTS.h3, color: COLORS.text, fontWeight: "bold" },
+  editButton: { ...FONTS.body3, color: COLORS.primary },
+  errorText: { ...FONTS.h3, color: COLORS.error, textAlign: "center", marginTop: 50 },
   summaryCard: {
-    backgroundColor: "#2c2c2e",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
+    backgroundColor: COLORS.card,
+    padding: SIZES.padding * 0.8,
+    borderRadius: SIZES.radius,
+    marginBottom: SIZES.padding * 1.2,
   },
   summaryText: {
-    color: "#fff",
-    fontSize: 22,
+    ...FONTS.h2,
+    color: COLORS.text,
     fontWeight: "bold",
-    marginBottom: 16,
+    marginBottom: SIZES.padding,
   },
   detailsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
-
   sectionTitle: {
-    color: "#fff",
-    fontSize: 24,
+    ...FONTS.h2,
+    color: COLORS.text,
     fontWeight: "bold",
-    marginBottom: 16,
+    marginBottom: SIZES.padding * 0.8,
   },
   addEventButton: {
-    backgroundColor: "#007AFF",
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: COLORS.primary,
+    padding: SIZES.base * 1.5,
+    borderRadius: SIZES.radius,
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: SIZES.padding,
   },
-  addEventButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
-  timelineContainer: {},
-  timelineNode: { flexDirection: "row" },
-  timelineGutter: { alignItems: "center" },
-  timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#8e8e93",
-  },
-  nexusDot: {
-    backgroundColor: "#ff9f0a",
-    shadowColor: "#ff9f0a",
-    shadowRadius: 8,
-    shadowOpacity: 0.8,
-  },
+  addEventButtonText: { ...FONTS.h4, color: COLORS.white, fontWeight: "bold" },
   sectionText: {
-    color: "#e0e0e0",
-    fontSize: 15,
+    ...FONTS.body3,
+    color: COLORS.textSecondary,
     lineHeight: 22,
-    paddingTop: 10,
+    paddingTop: SIZES.base,
   },
-  timelineLine: {
-    flex: 1,
-    width: 3,
-    backgroundColor: cosmicColors.primaryGlow,
-    shadowColor: cosmicColors.primaryGlow,
-    shadowRadius: 12,
-    shadowOpacity: 1,
-  },
-  nexusLineGlow: {
-    backgroundColor: cosmicColors.nexusGlow,
-    shadowColor: cosmicColors.nexusGlow,
-    shadowRadius: 16,
-    shadowOpacity: 1,
-  },
-  timelineContent: { flex: 1, marginLeft: 16, paddingBottom: 24 },
-  eventHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  eventAuthor: { color: "#fff", fontSize: 16, fontWeight: "bold" },
-  eventDate: { color: "#a0a0a0", fontSize: 12 },
-  eventComment: { color: "#e0e0e0", fontSize: 15 },
   timelineCanvasContainer: {
     alignItems: "center",
-    marginTop: 20,
+    marginTop: SIZES.padding,
   },
   noEventsText: {
-    color: "#a0a0a0",
-    fontSize: 16,
+    ...FONTS.body3,
+    color: COLORS.textSecondary,
     textAlign: "center",
     paddingVertical: 40,
-  },
-  eventText: {
-    position: "absolute",
-    color: "#e0e0e0",
-    fontSize: 15,
-    width: 150,
-    textAlign: "right",
-  },
-  eventTextContainer: {
-    position: "absolute",
-    width: 150,
   },
 });

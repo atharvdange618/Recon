@@ -1,4 +1,5 @@
 import { FetchedTimelineEvent } from "@/lib/database";
+import { COLORS } from "@/lib/theme";
 import {
   Blur,
   Canvas,
@@ -105,14 +106,14 @@ export const SacredTimeline = ({
             path={mainPath}
             style="stroke"
             strokeWidth={5}
-            color="#00d8ff"
+            color={COLORS.primary}
           />
         </Group>
         <Path
           path={mainPath}
           style="stroke"
           strokeWidth={2.5}
-          color="#c1efff"
+          color={COLORS.lightGray2}
         />
 
         {events.map((event, index) => {
@@ -138,22 +139,22 @@ export const SacredTimeline = ({
                     path={nexusPath}
                     style="stroke"
                     strokeWidth={4}
-                    color="#ff9f0a"
+                    color={COLORS.warning}
                   />
                 </Group>
                 <Path
                   path={nexusPath}
                   style="stroke"
                   strokeWidth={2}
-                  color="#ff453a"
+                  color={COLORS.error}
                 />
-                <Circle cx={x} cy={y} r={6} color="#ff453a" />
+                <Circle cx={x} cy={y} r={6} color={COLORS.error} />
               </Group>
             );
           } else {
             return (
               <Group key={event.id}>
-                <Circle cx={x} cy={y} r={6} color="white" />
+                <Circle cx={x} cy={y} r={6} color={COLORS.white} />
               </Group>
             );
           }

@@ -1,5 +1,5 @@
 import CustomPicker from "@/components/CustomPicker";
-import { Bug, getBugById, updateBug } from "@/lib/database";
+import { archiveBug, Bug, getBugById, updateBug } from "@/lib/database";
 import {
   priorityOptions,
   resolutionOptions,
@@ -22,6 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { COLORS, FONTS, SIZES } from "../../lib/theme";
 
 export default function EditBugScreen() {
   const router = useRouter();
@@ -60,9 +61,9 @@ export default function EditBugScreen() {
         setAssignee(bug.assignee_name || "");
         setReporter(bug.reporter_name || "");
         setEnvironment(bug.environment || "");
-        setEnvironment(bug.resolution || "");
-        setEnvironment(bug.requirement_number || "");
-        setEnvironment(bug.test_case_name || "");
+        setResolution(bug.resolution || "");
+        setRequirementNumber(bug.requirement_number || "");
+        setTestCaseName(bug.test_case_name || "");
       }
       setIsLoading(false);
     }
@@ -100,12 +101,37 @@ export default function EditBugScreen() {
     }
   };
 
+  const handleArchive = () => {
+    Alert.alert(
+      "Archive Bug",
+      "Are you sure you want to archive this bug? You cannot undo this action.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Archive",
+          onPress: () => {
+            const success = archiveBug(bugId);
+            if (success) {
+              router.replace("/");
+            } else {
+              Alert.alert("Error", "Failed to archive the bug.");
+            }
+          },
+          style: "destructive",
+        },
+      ]
+    );
+  };
+
   if (isLoading) {
     return (
       <ActivityIndicator
         size="large"
-        color="#fff"
-        style={{ flex: 1, backgroundColor: "#121212" }}
+        color={COLORS.primary}
+        style={{ flex: 1, backgroundColor: COLORS.background }}
       />
     );
   }
@@ -136,7 +162,7 @@ export default function EditBugScreen() {
               value={summary}
               onChangeText={setSummary}
               placeholder="e.g., User login fails on Android"
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
             />
           </View>
 
@@ -166,7 +192,7 @@ export default function EditBugScreen() {
               value={assignee}
               onChangeText={setAssignee}
               placeholder="e.g., John Doe"
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
             />
           </View>
 
@@ -177,7 +203,7 @@ export default function EditBugScreen() {
               value={reporter}
               onChangeText={setReporter}
               placeholder="Your name"
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
             />
           </View>
 
@@ -188,7 +214,7 @@ export default function EditBugScreen() {
               value={environment}
               onChangeText={setEnvironment}
               placeholder="e.g., Production, iOS v2.3"
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
             />
           </View>
 
@@ -199,7 +225,7 @@ export default function EditBugScreen() {
               value={description}
               onChangeText={setDescription}
               placeholder="High-level overview of the bug"
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
               multiline
             />
           </View>
@@ -211,7 +237,7 @@ export default function EditBugScreen() {
               value={steps}
               onChangeText={setSteps}
               placeholder="1. Go to Login screen..."
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
               multiline
             />
           </View>
@@ -223,7 +249,7 @@ export default function EditBugScreen() {
               value={expected}
               onChangeText={setExpected}
               placeholder="User should be logged in successfully."
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
               multiline
             />
           </View>
@@ -235,7 +261,7 @@ export default function EditBugScreen() {
               value={actual}
               onChangeText={setActual}
               placeholder="App crashes or shows an error."
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
               multiline
             />
           </View>
@@ -254,7 +280,7 @@ export default function EditBugScreen() {
               value={requirementNumber}
               onChangeText={setRequirementNumber}
               placeholder="e.g., REQ-123"
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
             />
           </View>
 
@@ -265,9 +291,16 @@ export default function EditBugScreen() {
               value={testCaseName}
               onChangeText={setTestCaseName}
               placeholder="e.g., TC-456"
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
             />
           </View>
+
+          <TouchableOpacity
+            style={styles.archiveButton}
+            onPress={handleArchive}
+          >
+            <Text style={styles.archiveButtonText}>Archive Bug</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -277,48 +310,65 @@ export default function EditBugScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: COLORS.background,
     paddingTop: StatusBar.currentHeight,
   },
   container: {
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
+    padding: SIZES.padding,
   },
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
-    backgroundColor: "#1c1c1e",
+    padding: SIZES.padding,
+    backgroundColor: COLORS.card,
     borderBottomWidth: 1,
-    borderBottomColor: "#3a3a3c",
+    borderBottomColor: COLORS.border,
   },
   header: {
-    fontSize: 17,
+    ...FONTS.h3,
     fontWeight: "bold",
-    color: "#fff",
+    color: COLORS.text,
   },
-  closeButton: { fontSize: 17, color: "#007AFF" },
-  saveButtonTextHeader: { fontSize: 17, color: "#007AFF", fontWeight: "bold" },
-  inputGroup: { marginBottom: 20 },
+  closeButton: { ...FONTS.body3, color: COLORS.primary },
+  saveButtonTextHeader: {
+    ...FONTS.body3,
+    color: COLORS.primary,
+    fontWeight: "bold",
+  },
+  inputGroup: { marginBottom: SIZES.padding * 0.8 },
   label: {
-    color: "#a0a0a0",
-    marginBottom: 8,
-    fontSize: 16,
+    ...FONTS.body3,
+    color: COLORS.textSecondary,
+    marginBottom: SIZES.base,
   },
   input: {
-    backgroundColor: "#333",
-    borderRadius: 8,
-    padding: 15,
-    color: "#fff",
-    fontSize: 16,
+    ...FONTS.body3,
+    backgroundColor: COLORS.darkGray,
+    borderRadius: SIZES.radius,
+    padding: SIZES.base * 1.8,
+    color: COLORS.text,
     borderWidth: 1,
-    borderColor: "#555",
+    borderColor: COLORS.border,
   },
   multiline: {
-    minHeight: 100,
+    minHeight: 120,
     textAlignVertical: "top",
+  },
+  archiveButton: {
+    marginTop: SIZES.padding * 2,
+    paddingVertical: SIZES.base * 1.8,
+    borderRadius: SIZES.radius,
+    borderWidth: 1,
+    borderColor: COLORS.error,
+    alignItems: "center",
+  },
+  archiveButtonText: {
+    ...FONTS.h4,
+    color: COLORS.error,
+    fontWeight: "600",
   },
 });

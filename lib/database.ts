@@ -240,9 +240,27 @@ const updateBug = (id: number, bug: Partial<Bug>): boolean => {
   }
 };
 
+/**
+ * Archives a bug by setting its is_archived flag to 1.
+ * @param id The ID of the bug to archive.
+ * @returns True if the archive operation was successful, false otherwise.
+ */
+const archiveBug = (id: number): boolean => {
+  const sql = `UPDATE Bugs SET is_archived = 1 WHERE id = ?;`;
+  try {
+    db.runSync(sql, id);
+    console.log(`Bug with ID: ${id} archived successfully.`);
+    return true;
+  } catch (error) {
+    console.error(`Failed to archive bug with ID ${id}:`, error);
+    return false;
+  }
+};
+
 export {
   addBug,
   addTimelineEvent,
+  archiveBug,
   db,
   getBugById,
   getBugs,

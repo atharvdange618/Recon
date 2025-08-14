@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
+import { COLORS, FONTS, SIZES } from "../lib/theme";
 
 export const DetailItem = ({ label, value }: any) => (
   <View style={styles.detailItem}>
@@ -8,7 +9,7 @@ export const DetailItem = ({ label, value }: any) => (
 );
 
 const styles = StyleSheet.create({
-  detailItem: { width: "48%", marginBottom: 12 },
-  detailLabel: { color: "#a0a0a0", fontSize: 14, marginBottom: 4 },
-  detailValue: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  detailItem: { width: "48%", marginBottom: SIZES.base * 1.5 },
+  detailLabel: { ...FONTS.body4, color: COLORS.textSecondary, marginBottom: SIZES.base / 2 },
+  detailValue: { ...FONTS.h4, color: COLORS.text, fontWeight: "600" },
 });

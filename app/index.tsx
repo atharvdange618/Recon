@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { COLORS, FONTS, SIZES } from "../lib/theme";
 
 export default function DashboardScreen() {
   const [bugs, setBugs] = useState<FetchedBug[]>([]);
@@ -51,7 +52,7 @@ export default function DashboardScreen() {
       {isLoading ? (
         <ActivityIndicator
           size="large"
-          color="#fff"
+          color={COLORS.primary}
           style={{ marginTop: 50 }}
         />
       ) : (
@@ -73,20 +74,20 @@ export default function DashboardScreen() {
 }
 
 const dashboardStyles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#121212" },
+  safeArea: { flex: 1, backgroundColor: COLORS.background },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 20,
+    padding: SIZES.padding,
   },
   title: {
-    color: "#fff",
-    fontSize: 34,
+    ...FONTS.h1,
+    color: COLORS.text,
     fontWeight: "bold",
   },
   addButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: COLORS.primary,
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -94,12 +95,12 @@ const dashboardStyles = StyleSheet.create({
     alignItems: "center",
   },
   addButtonText: {
-    color: "#fff",
+    color: COLORS.white,
     fontSize: 28,
     lineHeight: 34,
   },
   listContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: SIZES.padding,
   },
   emptyContainer: {
     flex: 1,
@@ -108,13 +109,13 @@ const dashboardStyles = StyleSheet.create({
     marginTop: "40%",
   },
   emptyText: {
-    color: "#fff",
-    fontSize: 22,
+    ...FONTS.h2,
+    color: COLORS.text,
     fontWeight: "bold",
   },
   emptySubText: {
-    color: "#a0a0a0",
-    fontSize: 16,
-    marginTop: 8,
+    ...FONTS.body3,
+    color: COLORS.textSecondary,
+    marginTop: SIZES.base,
   },
 });

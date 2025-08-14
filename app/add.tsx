@@ -21,6 +21,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { addBug, Bug } from "../lib/database";
+import { COLORS, FONTS, SIZES } from "../lib/theme";
 
 export default function AddBugScreen() {
   const router = useRouter();
@@ -77,12 +78,19 @@ export default function AddBugScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
+        <View style={styles.headerContainer}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={styles.closeButton}>Cancel</Text>
+          </TouchableOpacity>
+          <Text style={styles.header}>Create Bug</Text>
+          <TouchableOpacity onPress={handleSave}>
+            <Text style={styles.saveButtonTextHeader}>Save</Text>
+          </TouchableOpacity>
+        </View>
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.contentContainer}
         >
-          <Text style={styles.header}>Create New Bug</Text>
-
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Summary</Text>
             <TextInput
@@ -90,7 +98,7 @@ export default function AddBugScreen() {
               value={summary}
               onChangeText={setSummary}
               placeholder="e.g., User login fails on Android"
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
             />
           </View>
 
@@ -120,7 +128,7 @@ export default function AddBugScreen() {
               value={assignee}
               onChangeText={setAssignee}
               placeholder="e.g., John Doe"
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
             />
           </View>
 
@@ -131,7 +139,7 @@ export default function AddBugScreen() {
               value={reporter}
               onChangeText={setReporter}
               placeholder="Your name"
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
             />
           </View>
 
@@ -142,7 +150,7 @@ export default function AddBugScreen() {
               value={environment}
               onChangeText={setEnvironment}
               placeholder="e.g., Production, iOS v2.3"
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
             />
           </View>
 
@@ -153,7 +161,7 @@ export default function AddBugScreen() {
               value={description}
               onChangeText={setDescription}
               placeholder="High-level overview of the bug"
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
               multiline
             />
           </View>
@@ -165,7 +173,7 @@ export default function AddBugScreen() {
               value={steps}
               onChangeText={setSteps}
               placeholder="1. Go to Login screen..."
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
               multiline
             />
           </View>
@@ -177,7 +185,7 @@ export default function AddBugScreen() {
               value={expected}
               onChangeText={setExpected}
               placeholder="User should be logged in successfully."
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
               multiline
             />
           </View>
@@ -189,7 +197,7 @@ export default function AddBugScreen() {
               value={actual}
               onChangeText={setActual}
               placeholder="App crashes or shows an error."
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
               multiline
             />
           </View>
@@ -208,7 +216,7 @@ export default function AddBugScreen() {
               value={requirementNumber}
               onChangeText={setRequirementNumber}
               placeholder="e.g., REQ-123"
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
             />
           </View>
 
@@ -219,13 +227,9 @@ export default function AddBugScreen() {
               value={testCaseName}
               onChangeText={setTestCaseName}
               placeholder="e.g., TC-456"
-              placeholderTextColor="#777"
+              placeholderTextColor={COLORS.gray}
             />
           </View>
-
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Save Bug</Text>
-          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -235,52 +239,64 @@ export default function AddBugScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#121212",
-    paddingTop: StatusBar.currentHeight,
+    backgroundColor: COLORS.background,
   },
   container: {
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
+    padding: SIZES.padding,
+  },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: SIZES.padding,
+    backgroundColor: COLORS.card,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   header: {
-    fontSize: 28,
+    ...FONTS.h3,
     fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 20,
+    color: COLORS.text,
   },
-  inputGroup: {
-    marginBottom: 20,
+  closeButton: { ...FONTS.body3, color: COLORS.primary },
+  saveButtonTextHeader: {
+    ...FONTS.body3,
+    color: COLORS.primary,
+    fontWeight: "bold",
   },
+  inputGroup: { marginBottom: SIZES.padding * 0.8 },
   label: {
-    color: "#a0a0a0",
-    marginBottom: 8,
-    fontSize: 16,
+    ...FONTS.body3,
+    color: COLORS.textSecondary,
+    marginBottom: SIZES.base,
   },
   input: {
-    backgroundColor: "#333",
-    borderRadius: 8,
-    padding: 15,
-    color: "#fff",
-    fontSize: 16,
+    ...FONTS.body3,
+    backgroundColor: COLORS.darkGray,
+    borderRadius: SIZES.radius,
+    padding: SIZES.base * 1.8,
+    color: COLORS.text,
     borderWidth: 1,
-    borderColor: "#555",
+    borderColor: COLORS.border,
   },
   multiline: {
-    minHeight: 100,
+    minHeight: 120,
     textAlignVertical: "top",
   },
-  saveButton: {
-    backgroundColor: "#007AFF",
-    padding: 14,
-    borderRadius: 8,
+  archiveButton: {
+    marginTop: SIZES.padding * 2,
+    paddingVertical: SIZES.base * 1.8,
+    borderRadius: SIZES.radius,
+    borderWidth: 1,
+    borderColor: COLORS.error,
     alignItems: "center",
-    marginTop: 20,
   },
-  saveButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
+  archiveButtonText: {
+    ...FONTS.h4,
+    color: COLORS.error,
+    fontWeight: "600",
   },
 });

@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { COLORS, FONTS, SIZES } from "../lib/theme";
 
 type PickerOption = {
   label: string;
@@ -86,55 +87,54 @@ const CustomPicker: React.FC<CustomPickerProps> = ({
 };
 
 const pickerStyles = StyleSheet.create({
-  container: { marginBottom: 20 },
-  label: { color: "#a0a0a0", marginBottom: 8, fontSize: 16 },
+  container: { marginBottom: SIZES.padding * 0.8 },
+  label: { ...FONTS.body3, color: COLORS.textSecondary, marginBottom: SIZES.base },
   pickerButton: {
-    backgroundColor: "#333",
-    borderRadius: 8,
-    padding: 15,
+    backgroundColor: COLORS.darkGray,
+    borderRadius: SIZES.radius,
+    padding: SIZES.base * 1.8,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#555",
+    borderColor: COLORS.border,
   },
-  pickerButtonText: { color: "#fff", fontSize: 16 },
-  arrow: { color: "#a0a0a0" },
+  pickerButtonText: { ...FONTS.body3, color: COLORS.text },
+  arrow: { color: COLORS.textSecondary },
   modalContainer: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.7)",
+    backgroundColor: "rgba(0,0,0,0.8)",
   },
   modalContent: {
-    backgroundColor: "#222",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
+    backgroundColor: COLORS.card,
+    borderTopLeftRadius: SIZES.radius * 1.5,
+    borderTopRightRadius: SIZES.radius * 1.5,
+    padding: SIZES.padding,
     maxHeight: "70%",
   },
   modalTitle: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 20,
+    ...FONTS.h2,
+    color: COLORS.text,
+    marginBottom: SIZES.padding,
     textAlign: "center",
   },
   optionButton: {
-    padding: 20,
+    padding: SIZES.padding * 0.8,
     borderBottomWidth: 1,
-    borderBottomColor: "#444",
+    borderBottomColor: COLORS.border,
   },
-  optionText: { color: "#fff", fontSize: 18, textAlign: "center" },
+  optionText: { ...FONTS.h4, color: COLORS.text, textAlign: "center" },
   closeButton: {
-    backgroundColor: "#007AFF",
-    borderRadius: 8,
-    padding: 15,
-    marginTop: 20,
+    backgroundColor: COLORS.primary,
+    borderRadius: SIZES.radius,
+    padding: SIZES.base * 1.8,
+    marginTop: SIZES.padding,
   },
   closeButtonText: {
-    color: "#fff",
+    ...FONTS.h4,
+    color: COLORS.white,
     textAlign: "center",
-    fontSize: 18,
     fontWeight: "bold",
   },
 });

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { COLORS, FONTS, SIZES } from "../lib/theme";
 
 export const CollapsibleSection = ({
   title,
@@ -34,31 +35,31 @@ export const CollapsibleSection = ({
 
 const styles = StyleSheet.create({
   collapsibleContainer: {
-    backgroundColor: "#2c2c2e",
-    borderRadius: 12,
-    marginBottom: 12,
+    backgroundColor: COLORS.card,
+    borderRadius: SIZES.radius,
+    marginBottom: SIZES.base * 1.5,
     overflow: "hidden",
   },
   collapsibleHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    padding: SIZES.base * 2,
   },
   collapsibleTitle: {
-    color: "#fff",
-    fontSize: 18,
+    ...FONTS.h3,
+    color: COLORS.text,
     fontWeight: "bold",
   },
   collapsibleIcon: {
-    color: "#a0a0a0",
-    fontSize: 22,
+    ...FONTS.h2,
+    color: COLORS.textSecondary,
     fontWeight: "bold",
   },
   collapsibleContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: SIZES.base * 2,
+    paddingBottom: SIZES.base * 2,
     borderTopWidth: 1,
-    borderTopColor: "#3a3a3c",
+    borderTopColor: COLORS.border,
   },
 });

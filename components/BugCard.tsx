@@ -1,6 +1,7 @@
 import { FetchedBug } from "@/lib/database";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { COLORS, FONTS, SIZES } from "../lib/theme";
 
 type BugCardProps = {
   bug: FetchedBug;
@@ -11,15 +12,15 @@ type BugCardProps = {
 const getPriorityColor = (priority: FetchedBug["priority"]) => {
   switch (priority) {
     case "Critical":
-      return "#ff453a"; // Red
+      return COLORS.error;
     case "High":
-      return "#ff9f0a"; // Orange
+      return COLORS.warning;
     case "Medium":
-      return "#32ade6"; // Blue
+      return COLORS.primary;
     case "Low":
-      return "#30d158"; // Green
+      return COLORS.success;
     default:
-      return "#8e8e93"; // Gray
+      return COLORS.gray;
   }
 };
 
@@ -39,7 +40,7 @@ export const BugCard: React.FC<BugCardProps> = ({ bug, onPress }) => {
       </View>
       <Text style={styles.summary}>{bug.summary}</Text>
       <View style={styles.bottomRow}>
-        <View style={[styles.tag, { backgroundColor: "#8e8e93" }]}>
+        <View style={[styles.tag, { backgroundColor: COLORS.darkGray }]}>
           <Text style={styles.tagText}>{bug.status}</Text>
         </View>
         <Text style={styles.assignee}>
@@ -52,27 +53,35 @@ export const BugCard: React.FC<BugCardProps> = ({ bug, onPress }) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#2c2c2e",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: COLORS.card,
+    borderRadius: SIZES.radius,
+    padding: SIZES.base * 2,
+    marginBottom: SIZES.base * 1.5,
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: SIZES.base,
   },
   bugId: {
-    color: "#a0a0a0",
-    fontSize: 14,
+    ...FONTS.body4,
+    color: COLORS.textSecondary,
     fontWeight: "600",
   },
   summary: {
-    color: "#ffffff",
-    fontSize: 17,
+    ...FONTS.h3,
+    color: COLORS.text,
     fontWeight: "bold",
-    marginBottom: 12,
+    marginBottom: SIZES.base * 1.5,
   },
   bottomRow: {
     flexDirection: "row",
@@ -80,17 +89,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tag: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: SIZES.radius / 2,
+    paddingHorizontal: SIZES.base,
+    paddingVertical: SIZES.base / 2,
   },
   tagText: {
-    color: "#ffffff",
-    fontSize: 12,
+    ...FONTS.body5,
+    color: COLORS.white,
     fontWeight: "bold",
   },
   assignee: {
-    color: "#a0a0a0",
-    fontSize: 14,
+    ...FONTS.body4,
+    color: COLORS.textSecondary,
   },
 });

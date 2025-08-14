@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { COLORS, FONTS, SIZES } from "../lib/theme";
 
 export const AddEventModal = ({ visible, onClose, onSave, bugId }: any) => {
   const [author, setAuthor] = useState("");
@@ -45,14 +46,14 @@ export const AddEventModal = ({ visible, onClose, onSave, bugId }: any) => {
           <TextInput
             style={modalStyles.input}
             placeholder="Author (e.g., John Doe)"
-            placeholderTextColor="#777"
+            placeholderTextColor={COLORS.gray}
             value={author}
             onChangeText={setAuthor}
           />
           <TextInput
             style={[modalStyles.input, { height: 100 }]}
             placeholder="Comment..."
-            placeholderTextColor="#777"
+            placeholderTextColor={COLORS.gray}
             value={comment}
             onChangeText={setComment}
             multiline
@@ -97,68 +98,67 @@ const modalStyles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0,0,0,0.7)",
   },
   modalView: {
     width: "90%",
-    backgroundColor: "#2c2c2e",
-    borderRadius: 20,
-    padding: 25,
+    backgroundColor: COLORS.card,
+    borderRadius: SIZES.radius * 1.5,
+    padding: SIZES.padding,
     alignItems: "center",
-    shadowColor: "#000",
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 20,
+    ...FONTS.h2,
+    color: COLORS.text,
+    marginBottom: SIZES.padding,
   },
   input: {
-    backgroundColor: "#333",
+    ...FONTS.body3,
+    backgroundColor: COLORS.darkGray,
     width: "100%",
-    borderRadius: 8,
-    padding: 15,
-    color: "#fff",
-    fontSize: 16,
+    borderRadius: SIZES.radius,
+    padding: SIZES.base * 1.8,
+    color: COLORS.text,
     borderWidth: 1,
-    borderColor: "#555",
-    marginBottom: 15,
+    borderColor: COLORS.border,
+    marginBottom: SIZES.base * 2,
   },
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    marginBottom: 20,
+    marginBottom: SIZES.padding,
   },
   checkbox: {
     width: 24,
     height: 24,
-    borderRadius: 4,
+    borderRadius: SIZES.radius / 2,
     borderWidth: 2,
-    borderColor: "#007AFF",
+    borderColor: COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
   },
-  checkboxChecked: { backgroundColor: "#007AFF" },
-  checkboxCheck: { color: "#fff", fontWeight: "bold" },
-  checkboxLabel: { color: "#fff", marginLeft: 12, fontSize: 16 },
+  checkboxChecked: { backgroundColor: COLORS.primary },
+  checkboxCheck: { color: COLORS.white, fontWeight: "bold" },
+  checkboxLabel: { ...FONTS.body3, color: COLORS.text, marginLeft: SIZES.base * 1.5 },
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
   },
   button: {
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: SIZES.radius,
+    padding: SIZES.base * 1.5,
     elevation: 2,
     flex: 1,
-    marginHorizontal: 5,
+    marginHorizontal: SIZES.base / 2,
   },
-  buttonClose: { backgroundColor: "#555" },
-  buttonSave: { backgroundColor: "#007AFF" },
-  textStyle: { color: "white", fontWeight: "bold", textAlign: "center" },
+  buttonClose: { backgroundColor: COLORS.darkGray },
+  buttonSave: { backgroundColor: COLORS.primary },
+  textStyle: { ...FONTS.h4, color: "white", fontWeight: "bold", textAlign: "center" },
 });
