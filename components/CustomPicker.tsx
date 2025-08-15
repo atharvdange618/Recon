@@ -1,3 +1,4 @@
+import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   FlatList,
@@ -47,7 +48,7 @@ const CustomPicker: React.FC<CustomPickerProps> = ({
         onPress={() => setModalVisible(true)}
       >
         <Text style={pickerStyles.pickerButtonText}>{selectedLabel}</Text>
-        <Text style={pickerStyles.arrow}>▼</Text>
+        <Feather name="chevron-down" size={20} color={COLORS.textSecondary} />
       </TouchableOpacity>
 
       <Modal
@@ -87,20 +88,17 @@ const CustomPicker: React.FC<CustomPickerProps> = ({
 };
 
 const pickerStyles = StyleSheet.create({
-  container: { marginBottom: SIZES.padding * 0.8 },
-  label: { ...FONTS.body3, color: COLORS.textSecondary, marginBottom: SIZES.base },
+  container: { marginBottom: SIZES.sm, width: "100%" },
+  label: { ...FONTS.body, color: COLORS.textSecondary, marginBottom: SIZES.xs },
   pickerButton: {
-    backgroundColor: COLORS.darkGray,
+    backgroundColor: COLORS.input,
     borderRadius: SIZES.radius,
-    padding: SIZES.base * 1.8,
+    padding: SIZES.sm,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  pickerButtonText: { ...FONTS.body3, color: COLORS.text },
-  arrow: { color: COLORS.textSecondary },
+  pickerButtonText: { ...FONTS.body, color: COLORS.text },
   modalContainer: {
     flex: 1,
     justifyContent: "flex-end",
@@ -108,19 +106,19 @@ const pickerStyles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: COLORS.card,
-    borderTopLeftRadius: SIZES.radius * 1.5,
-    borderTopRightRadius: SIZES.radius * 1.5,
-    padding: SIZES.padding,
+    borderTopLeftRadius: SIZES.radius_lg,
+    borderTopRightRadius: SIZES.radius_lg,
+    padding: SIZES.sm,
     maxHeight: "70%",
   },
   modalTitle: {
     ...FONTS.h2,
     color: COLORS.text,
-    marginBottom: SIZES.padding,
+    marginBottom: SIZES.md,
     textAlign: "center",
   },
   optionButton: {
-    padding: SIZES.padding * 0.8,
+    padding: SIZES.sm,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -128,8 +126,8 @@ const pickerStyles = StyleSheet.create({
   closeButton: {
     backgroundColor: COLORS.primary,
     borderRadius: SIZES.radius,
-    padding: SIZES.base * 1.8,
-    marginTop: SIZES.padding,
+    padding: SIZES.sm,
+    marginTop: SIZES.md,
   },
   closeButtonText: {
     ...FONTS.h4,

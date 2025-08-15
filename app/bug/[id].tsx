@@ -1,6 +1,6 @@
 import { AddEventModal } from "@/components/AddEventModal";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
-import { Card, DetailItem } from "@/components/Helpers";
+import { Card, DetailItem, formatDateTime } from "@/components/Helpers";
 import { SacredTimeline } from "@/components/SacredTimeline";
 import { Tooltip } from "@/components/Tooltip";
 import {
@@ -16,23 +16,14 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  UIManager,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS, FONTS, SIZES } from "../../lib/theme";
-
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 export default function BugDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -99,7 +90,7 @@ export default function BugDetailScreen() {
           onPress={() => router.back()}
           style={styles.headerButton}
         >
-          <Feather name="chevron-left" size={24} color={COLORS.primary} />
+          <Feather name="chevron-left" size={28} color={COLORS.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           BUG-{String(bug.id).padStart(3, "0")}
@@ -108,7 +99,7 @@ export default function BugDetailScreen() {
           onPress={() => router.push(`/edit/${bug.id}`)}
           style={styles.headerButton}
         >
-          <Feather name="edit-2" size={20} color={COLORS.primary} />
+          <Feather name="edit-2" size={22} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
 
@@ -118,44 +109,44 @@ export default function BugDetailScreen() {
         </Card>
 
         <Card title="Details">
-          <DetailItem icon="[S]" label="Status" value={bug.status} />
-          <DetailItem icon="[P]" label="Priority" value={bug.priority} />
-          <DetailItem icon="[!]'" label="Severity" value={bug.severity} />
+          <DetailItem icon="info" label="Status" value={bug.status} />
+          <DetailItem icon="flag" label="Priority" value={bug.priority} />
+          <DetailItem icon="shield" label="Severity" value={bug.severity} />
           <DetailItem
-            icon="[E]"
+            icon="monitor"
             label="Environment"
             value={bug.environment || "N/A"}
           />
           <DetailItem
-            icon="[X]"
+            icon="check-square"
             label="Resolution"
             value={bug.resolution || "N/A"}
           />
           <DetailItem
-            icon="[#]"
+            icon="hash"
             label="Requirement #"
             value={bug.requirement_number || "N/A"}
           />
           <DetailItem
-            icon="[T]"
+            icon="file-text"
             label="Test Case"
             value={bug.test_case_name || "N/A"}
           />
           <DetailItem
-            icon="[C]"
+            icon="clock"
             label="Created At"
-            value={new Date(bug.created_at).toLocaleString()}
+            value={formatDateTime(bug.created_at)}
           />
         </Card>
 
         <Card title="Assignment">
           <DetailItem
-            icon="[U]"
+            icon="user"
             label="Assignee"
             value={bug.assignee_name || "N/A"}
           />
           <DetailItem
-            icon="[R]"
+            icon="user-plus"
             label="Reporter"
             value={bug.reporter_name || "N/A"}
           />
@@ -183,14 +174,15 @@ export default function BugDetailScreen() {
         )}
 
         <View style={styles.timelineSection}>
-          <Text style={styles.sectionTitle}>Sacred Timeline</Text>
-          <TouchableOpacity
-            style={styles.addEventButton}
-            onPress={() => setModalVisible(true)}
-          >
-            <Feather name="plus" size={20} color={COLORS.white} />
-            <Text style={styles.addEventButtonText}>Add Timeline Event</Text>
-          </TouchableOpacity>
+          <View style={styles.timelineHeader}>
+            <Text style={styles.sectionTitle}>Sacred Timeline</Text>
+            <TouchableOpacity
+              style={styles.addEventButton}
+              onPress={() => setModalVisible(true)}
+            >
+              <Feather name="plus" size={16} color={COLORS.white} />
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.timelineCanvasContainer}>
             {timeline.length > 0 ? (
@@ -218,75 +210,69 @@ export default function BugDetailScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   container: {
-    padding: SIZES.padding,
-    paddingBottom: 50,
+    marginTop: SIZES.md,
+    paddingHorizontal: SIZES.md,
+    paddingBottom: SIZES.xl,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: SIZES.padding,
-    paddingVertical: SIZES.base,
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.xs,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
   headerButton: {
-    padding: SIZES.base,
+    padding: SIZES.xs,
   },
   headerTitle: { ...FONTS.h3, color: COLORS.text, fontWeight: "bold" },
   errorText: {
-    ...FONTS.h3,
+    ...FONTS.h2,
     color: COLORS.error,
     textAlign: "center",
-    marginTop: 50,
+    marginTop: SIZES.xl,
   },
   summaryText: {
     ...FONTS.h2,
     color: COLORS.text,
     fontWeight: "bold",
-    marginBottom: SIZES.base,
   },
   sectionTitle: {
     ...FONTS.h2,
     color: COLORS.text,
     fontWeight: "bold",
-    marginBottom: SIZES.padding,
-    marginTop: SIZES.padding,
+  },
+  timelineHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: SIZES.sm,
+    marginTop: SIZES.lg,
   },
   addEventButton: {
     backgroundColor: COLORS.primary,
-    padding: SIZES.padding * 0.8,
+    padding: SIZES.xs,
     borderRadius: SIZES.radius,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: SIZES.padding,
-  },
-  addEventButtonText: {
-    ...FONTS.h4,
-    color: COLORS.white,
-    fontWeight: "bold",
-    marginLeft: SIZES.base,
   },
   sectionText: {
-    ...FONTS.body3,
+    ...FONTS.body,
     color: COLORS.textSecondary,
     lineHeight: 22,
   },
   timelineSection: {
-    marginTop: SIZES.padding,
+    marginTop: SIZES.md,
   },
   timelineCanvasContainer: {
     alignItems: "center",
-    marginTop: SIZES.padding,
-    padding: SIZES.padding,
+    padding: SIZES.sm,
     backgroundColor: COLORS.card,
-    borderRadius: SIZES.radius,
+    borderRadius: SIZES.radius_lg,
   },
   noEventsText: {
-    ...FONTS.body3,
+    ...FONTS.body,
     color: COLORS.textSecondary,
     textAlign: "center",
-    paddingVertical: 40,
+    paddingVertical: SIZES.lg,
   },
 });

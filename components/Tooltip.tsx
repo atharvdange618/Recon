@@ -1,18 +1,52 @@
-import { StyleSheet, Text, View } from "react-native";
+import { FetchedTimelineEvent } from "@/lib/database";
+import React, { useEffect } from "react";
+import { StyleSheet, Text } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { COLORS, FONTS, SIZES } from "../lib/theme";
+import { formatDateTime } from "./Helpers";
 
-export const Tooltip = ({ event, position }: any) => {
+type TooltipProps = {
+  event: FetchedTimelineEvent | null;
+  position: { x: number; y: number };
+};
+
+export const Tooltip = ({ event, position }: TooltipProps) => {
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(0.95);
+
+  useEffect(() => {
+    if (event) {
+      opacity.value = withTiming(1, { duration: 200 });
+      scale.value = withTiming(1, { duration: 200 });
+    } else {
+      opacity.value = withTiming(0, { duration: 150 });
+      scale.value = withTiming(0.95, { duration: 150 });
+    }
+  }, [event, opacity, scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
+
   if (!event) return null;
+
   return (
-    <View
-      style={[styles.tooltipContainer, { top: position.y, left: position.x }]}
+    <Animated.View
+      style={[
+        styles.tooltipContainer,
+        { top: position.y, left: position.x },
+        animatedStyle,
+      ]}
     >
       <Text style={styles.tooltipAuthor}>{event.author}</Text>
       <Text style={styles.tooltipComment}>{event.comment}</Text>
-      <Text style={styles.tooltipDate}>
-        {new Date(event.event_at).toLocaleString()}
-      </Text>
-    </View>
+      <Text style={styles.tooltipDate}>{formatDateTime(event.event_at)}</Text>
+    </Animated.View>
   );
 };
 
@@ -20,7 +54,7 @@ const styles = StyleSheet.create({
   tooltipContainer: {
     position: "absolute",
     backgroundColor: COLORS.card,
-    padding: SIZES.base * 1.5,
+    padding: SIZES.sm,
     borderRadius: SIZES.radius,
     borderWidth: 1,
     borderColor: COLORS.primary,
@@ -37,16 +71,16 @@ const styles = StyleSheet.create({
   },
   tooltipAuthor: {
     ...FONTS.h4,
-    color: COLORS.white,
+    color: COLORS.text,
     fontWeight: "bold",
   },
   tooltipComment: {
-    ...FONTS.body4,
-    color: COLORS.lightGray,
-    marginVertical: SIZES.base / 2,
+    ...FONTS.body,
+    color: COLORS.textSecondary,
+    marginVertical: SIZES.xs,
   },
   tooltipDate: {
-    ...FONTS.body5,
-    color: COLORS.gray,
+    ...FONTS.caption,
+    color: COLORS.textSecondary,
   },
 });

@@ -97,6 +97,15 @@ export type FetchedTimelineEvent = TimelineEvent & {
   event_at: string;
 };
 
+export type DashboardStats = {
+  reported: number;
+  inProgress: number;
+  resolved: number;
+  criticalBugs: number;
+  newToday: number;
+  unassigned: number;
+};
+
 // DATABASE FUNCTIONS
 
 /**
@@ -297,6 +306,47 @@ const archiveBug = (id: number): boolean => {
   }
 };
 
+/**
+ * Fetches aggregated statistics for the dashboard in a single query.
+ * @returns A DashboardStats object.
+ */
+const getDashboardStats = (): DashboardStats => {
+  const sql = `
+    SELECT
+      COUNT(CASE WHEN status = 'Reported' THEN 1 END) as reported,
+      COUNT(CASE WHEN status = 'In Progress' THEN 1 END) as inProgress,
+      COUNT(CASE WHEN status = 'Resolved' THEN 1 END) as resolved,
+      COUNT(CASE WHEN severity = 'Critical' OR severity = 'Blocker' THEN 1 END) as criticalBugs,
+      COUNT(CASE WHEN created_at >= strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 day', 'localtime') THEN 1 END) as newToday,
+      COUNT(CASE WHEN assignee_name IS NULL THEN 1 END) as unassigned
+    FROM Bugs
+    WHERE is_archived = 0;
+  `;
+  try {
+    const result = db.getFirstSync<DashboardStats>(sql);
+    return (
+      result || {
+        reported: 0,
+        inProgress: 0,
+        resolved: 0,
+        criticalBugs: 0,
+        newToday: 0,
+        unassigned: 0,
+      }
+    );
+  } catch (error) {
+    console.error("Failed to fetch dashboard stats:", error);
+    return {
+      reported: 0,
+      inProgress: 0,
+      resolved: 0,
+      criticalBugs: 0,
+      newToday: 0,
+      unassigned: 0,
+    };
+  }
+};
+
 export {
   addBug,
   addTimelineEvent,
@@ -304,6 +354,7 @@ export {
   db,
   getBugById,
   getBugs,
+  getDashboardStats,
   getTimelineEvents,
   initDb,
   updateBug,

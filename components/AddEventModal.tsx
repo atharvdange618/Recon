@@ -1,4 +1,5 @@
 import { TimelineEvent } from "@/lib/database";
+import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
   Alert,
@@ -10,7 +11,6 @@ import {
   View,
 } from "react-native";
 import { COLORS, FONTS, SIZES } from "../lib/theme";
-import { Feather } from "@expo/vector-icons";
 
 export const AddEventModal = ({ visible, onClose, onSave, bugId }: any) => {
   const [author, setAuthor] = useState("");
@@ -47,14 +47,17 @@ export const AddEventModal = ({ visible, onClose, onSave, bugId }: any) => {
           <TextInput
             style={modalStyles.input}
             placeholder="Author (e.g., John Doe)"
-            placeholderTextColor={COLORS.gray}
+            placeholderTextColor={COLORS.textSecondary}
             value={author}
             onChangeText={setAuthor}
           />
           <TextInput
-            style={[modalStyles.input, { height: 100 }]}
+            style={[
+              modalStyles.input,
+              { minHeight: 100, textAlignVertical: "top" },
+            ]}
             placeholder="Comment..."
-            placeholderTextColor={COLORS.gray}
+            placeholderTextColor={COLORS.textSecondary}
             value={comment}
             onChangeText={setComment}
             multiline
@@ -69,7 +72,9 @@ export const AddEventModal = ({ visible, onClose, onSave, bugId }: any) => {
                 isNexus && modalStyles.checkboxChecked,
               ]}
             >
-              {isNexus && <Text style={modalStyles.checkboxCheck}>✓</Text>}
+              {isNexus && (
+                <Feather name="check" size={16} color={COLORS.white} />
+              )}
             </View>
             <Text style={modalStyles.checkboxLabel}>Mark as Nexus Event</Text>
           </TouchableOpacity>
@@ -79,7 +84,7 @@ export const AddEventModal = ({ visible, onClose, onSave, bugId }: any) => {
               style={[modalStyles.button, modalStyles.buttonClose]}
               onPress={onClose}
             >
-              <Feather name="x" size={20} color={COLORS.white} />
+              <Feather name="x" size={20} color={COLORS.text} />
               <Text style={modalStyles.textStyle}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -87,7 +92,9 @@ export const AddEventModal = ({ visible, onClose, onSave, bugId }: any) => {
               onPress={handleSave}
             >
               <Feather name="save" size={20} color={COLORS.white} />
-              <Text style={modalStyles.textStyle}>Save</Text>
+              <Text style={[modalStyles.textStyle, { color: COLORS.white }]}>
+                Save
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -106,8 +113,8 @@ const modalStyles = StyleSheet.create({
   modalView: {
     width: "90%",
     backgroundColor: COLORS.card,
-    borderRadius: SIZES.radius * 1.5,
-    padding: SIZES.padding,
+    borderRadius: SIZES.radius_lg,
+    padding: SIZES.md,
     alignItems: "center",
     shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
@@ -118,37 +125,35 @@ const modalStyles = StyleSheet.create({
   modalTitle: {
     ...FONTS.h2,
     color: COLORS.text,
-    marginBottom: SIZES.padding,
+    marginBottom: SIZES.md,
   },
   input: {
-    ...FONTS.body3,
-    backgroundColor: COLORS.darkGray,
+    ...FONTS.body,
+    backgroundColor: COLORS.input,
     width: "100%",
     borderRadius: SIZES.radius,
-    padding: SIZES.base * 1.8,
+    padding: SIZES.sm,
     color: COLORS.text,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginBottom: SIZES.base * 2,
+    marginBottom: SIZES.sm,
   },
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    marginBottom: SIZES.padding,
+    marginBottom: SIZES.md,
   },
   checkbox: {
     width: 24,
     height: 24,
-    borderRadius: SIZES.radius / 2,
+    borderRadius: SIZES.radius,
     borderWidth: 2,
     borderColor: COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
+    marginRight: SIZES.sm,
   },
   checkboxChecked: { backgroundColor: COLORS.primary },
-  checkboxCheck: { color: COLORS.white, fontWeight: "bold" },
-  checkboxLabel: { ...FONTS.body3, color: COLORS.text, marginLeft: SIZES.base * 1.5 },
+  checkboxLabel: { ...FONTS.body, color: COLORS.text },
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -156,15 +161,20 @@ const modalStyles = StyleSheet.create({
   },
   button: {
     borderRadius: SIZES.radius,
-    padding: SIZES.base * 1.5,
+    padding: SIZES.sm,
     elevation: 2,
     flex: 1,
-    marginHorizontal: SIZES.base / 2,
+    marginHorizontal: SIZES.xs,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
   },
-  buttonClose: { backgroundColor: COLORS.darkGray },
+  buttonClose: { backgroundColor: COLORS.input },
   buttonSave: { backgroundColor: COLORS.primary },
-  textStyle: { ...FONTS.h4, color: "white", fontWeight: "bold", textAlign: "center", marginLeft: SIZES.base / 2 },
+  textStyle: {
+    ...FONTS.h4,
+    color: COLORS.text,
+    fontWeight: "bold",
+    marginLeft: SIZES.xs,
+  },
 });

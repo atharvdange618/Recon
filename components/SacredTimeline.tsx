@@ -9,15 +9,45 @@ import {
   Skia,
 } from "@shopify/react-native-skia";
 import { useEffect, useMemo } from "react";
+import { useWindowDimensions } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import {
   Easing,
   runOnJS,
+  SharedValue,
   useDerivedValue,
   useSharedValue,
   withRepeat,
+  withSequence,
   withTiming,
 } from "react-native-reanimated";
+
+const EventDot = ({
+  eventId,
+  cx,
+  cy,
+  color,
+  activeEventId,
+  tapPulse,
+}: {
+  eventId: number;
+  cx: number;
+  cy: number;
+  color: string;
+  activeEventId: SharedValue<number | null>;
+  tapPulse: SharedValue<number>;
+}) => {
+  const derivedRadius = useDerivedValue(() => {
+    const baseRadius = 6;
+    const pulseAmount = 4;
+    if (activeEventId.value === eventId) {
+      return baseRadius + tapPulse.value * pulseAmount;
+    }
+    return baseRadius;
+  });
+
+  return <Circle cx={cx} cy={cy} r={derivedRadius} color={color} />;
+};
 
 export const SacredTimeline = ({
   events,
@@ -30,10 +60,13 @@ export const SacredTimeline = ({
     y: number
   ) => void;
 }) => {
+  const { width } = useWindowDimensions();
+  const canvasWidth = Math.min(width - 40, 350);
   const canvasHeight = events.length * 100 + 50;
-  const canvasWidth = 350;
 
   const pulseAnimation = useSharedValue(0);
+  const activeEventId = useSharedValue<number | null>(null);
+  const tapPulse = useSharedValue(0);
 
   useEffect(() => {
     pulseAnimation.value = withRepeat(
@@ -43,19 +76,14 @@ export const SacredTimeline = ({
     );
   }, [pulseAnimation]);
 
-  const blur = useDerivedValue(
-    () => 4 + pulseAnimation.value * 4,
-    [pulseAnimation]
-  );
-  const nexusOpacity = useDerivedValue(
-    () => pulseAnimation.value,
-    [pulseAnimation]
-  );
+  const blur = useDerivedValue(() => 4 + pulseAnimation.value * 4);
+  const nexusOpacity = useDerivedValue(() => pulseAnimation.value);
 
   const nexusDirections = useMemo(
-    () => events.map(() => (Math.random() > 0.5 ? 1 : -1)),
+    () => events.map((_, index) => (index % 2 === 0 ? 1 : -1)),
     [events]
   );
+
   const eventPositions = useMemo(
     () =>
       events.map((event, index) => {
@@ -69,7 +97,7 @@ export const SacredTimeline = ({
           event: event,
         };
       }),
-    [events, nexusDirections]
+    [events, nexusDirections, canvasWidth]
   );
 
   const tapGesture = Gesture.Tap().onEnd((e) => {
@@ -80,12 +108,18 @@ export const SacredTimeline = ({
         Math.pow(e.x - pos.x, 2) + Math.pow(e.y - pos.y, 2)
       );
       if (distance < pos.radius) {
+        activeEventId.value = pos.event.id;
+        tapPulse.value = withSequence(
+          withTiming(1, { duration: 200 }),
+          withTiming(0, { duration: 200 })
+        );
         runOnJS(onEventPress)(pos.event, pos.x, pos.y);
         hit = true;
         break;
       }
     }
     if (!hit) {
+      activeEventId.value = null;
       runOnJS(onEventPress)(null, 0, 0);
     }
   });
@@ -113,13 +147,15 @@ export const SacredTimeline = ({
           path={mainPath}
           style="stroke"
           strokeWidth={2.5}
-          color={COLORS.lightGray2}
+          color={COLORS.primary}
         />
 
         {events.map((event, index) => {
           const { x, y } = eventPositions[index];
           const direction = nexusDirections[index];
-          if (event.is_nexus_event) {
+          const isNexus = event.is_nexus_event;
+
+          if (isNexus) {
             const startX = canvasWidth * 0.5 + Math.sin(y / 50) * 5;
             const nexusPath = Skia.Path.Make();
             nexusPath.moveTo(startX, y);
@@ -139,7 +175,7 @@ export const SacredTimeline = ({
                     path={nexusPath}
                     style="stroke"
                     strokeWidth={4}
-                    color={COLORS.warning}
+                    color={COLORS.error}
                   />
                 </Group>
                 <Path
@@ -148,13 +184,27 @@ export const SacredTimeline = ({
                   strokeWidth={2}
                   color={COLORS.error}
                 />
-                <Circle cx={x} cy={y} r={6} color={COLORS.error} />
+                <EventDot
+                  eventId={event.id}
+                  cx={x}
+                  cy={y}
+                  color={COLORS.error}
+                  activeEventId={activeEventId}
+                  tapPulse={tapPulse}
+                />
               </Group>
             );
           } else {
             return (
               <Group key={event.id}>
-                <Circle cx={x} cy={y} r={6} color={COLORS.white} />
+                <EventDot
+                  eventId={event.id}
+                  cx={x}
+                  cy={y}
+                  color={COLORS.text}
+                  activeEventId={activeEventId}
+                  tapPulse={tapPulse}
+                />
               </Group>
             );
           }

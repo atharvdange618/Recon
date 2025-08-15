@@ -41,26 +41,23 @@ export const CollapsibleSection = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: COLORS.card,
-    borderRadius: SIZES.radius,
-    marginBottom: SIZES.padding,
+    borderRadius: SIZES.radius_lg,
+    marginBottom: SIZES.sm,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: SIZES.padding,
+    padding: SIZES.sm,
   },
   title: {
-    ...FONTS.h3,
+    ...FONTS.h4,
     color: COLORS.text,
     fontWeight: "bold",
   },
   content: {
-    padding: SIZES.padding,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    padding: SIZES.sm,
+    paddingTop: 0,
   },
 });

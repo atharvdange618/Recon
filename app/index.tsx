@@ -1,8 +1,14 @@
 /* eslint-disable react/no-unescaped-entities */
 import { BugCard } from "@/components/BugCard";
-import { FetchedBug, getBugs } from "@/lib/database";
+import {
+  DashboardStats,
+  FetchedBug,
+  getBugs,
+  getDashboardStats,
+} from "@/lib/database";
+import { Feather } from "@expo/vector-icons";
 import { Link, useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -13,48 +19,158 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS, FONTS, SIZES } from "../lib/theme";
-import { Feather } from "@expo/vector-icons";
+
+const PriorityLegend = () => {
+  const priorities = [
+    { name: "Critical", color: COLORS.error },
+    { name: "High", color: COLORS.warning },
+    { name: "Medium", color: COLORS.primary },
+    { name: "Low", color: COLORS.success },
+  ];
+
+  return (
+    <View style={legendStyles.container}>
+      {priorities.map((p) => (
+        <View key={p.name} style={legendStyles.item}>
+          <View style={[legendStyles.dot, { backgroundColor: p.color }]} />
+          <Text style={legendStyles.text}>{p.name}</Text>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+const StatusBar = ({ stats }: { stats: DashboardStats }) => {
+  return (
+    <View style={styles.statusBarContainer}>
+      <View style={styles.statusItem}>
+        <Text style={[styles.statusCount, { color: COLORS.error }]}>
+          {stats.reported}
+        </Text>
+        <Text style={styles.statusLabel}>Reported</Text>
+      </View>
+      <View style={styles.statusItem}>
+        <Text style={[styles.statusCount, { color: COLORS.primary }]}>
+          {stats.inProgress}
+        </Text>
+        <Text style={styles.statusLabel}>In Progress</Text>
+      </View>
+      <View style={styles.statusItem}>
+        <Text style={[styles.statusCount, { color: COLORS.success }]}>
+          {stats.resolved}
+        </Text>
+        <Text style={styles.statusLabel}>Resolved</Text>
+      </View>
+    </View>
+  );
+};
+
+const UrgencyMatrix = ({ stats }: { stats: DashboardStats }) => {
+  return (
+    <View style={styles.statusBarContainer}>
+      <View style={styles.statusItem}>
+        <Text style={[styles.statusCount, { color: COLORS.error }]}>
+          {stats.criticalBugs}
+        </Text>
+        <Text style={styles.statusLabel}>Critical Bugs</Text>
+      </View>
+      <View style={styles.statusItem}>
+        <Text style={[styles.statusCount, { color: COLORS.accent }]}>
+          {stats.newToday}
+        </Text>
+        <Text style={styles.statusLabel}>New Today</Text>
+      </View>
+      <View style={styles.statusItem}>
+        <Text style={[styles.statusCount, { color: COLORS.textSecondary }]}>
+          {stats.unassigned}
+        </Text>
+        <Text style={styles.statusLabel}>Unassigned</Text>
+      </View>
+    </View>
+  );
+};
+
+const EmptyState = () => (
+  <SafeAreaView style={styles.safeArea}>
+    <View style={styles.header}>
+      <Text style={styles.title}>Recon</Text>
+      <Link href="/add" asChild>
+        <TouchableOpacity style={styles.addButton}>
+          <Feather name="plus" size={24} color={COLORS.white} />
+        </TouchableOpacity>
+      </Link>
+    </View>
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>No Bugs Reported</Text>
+      <Text style={styles.emptySubText}>
+        Tap the '+' button to create your first bug report and start tracking.
+      </Text>
+    </View>
+  </SafeAreaView>
+);
 
 export default function DashboardScreen() {
-  const [bugs, setBugs] = useState<FetchedBug[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  const [bugs, setBugs] = useState<FetchedBug[]>([]);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
-      console.log("Dashboard focused, fetching bugs...");
       setIsLoading(true);
       const fetchedBugs = getBugs();
+      const fetchedStats = getDashboardStats();
       setBugs(fetchedBugs);
+      setStats(fetchedStats);
       setIsLoading(false);
     }, [])
   );
 
-  const renderEmptyState = () => (
-    <View style={dashboardStyles.emptyContainer}>
-      <Text style={dashboardStyles.emptyText}>No bugs yet.</Text>
-      <Text style={dashboardStyles.emptySubText}>
-        Tap '+' to add your first bug.
-      </Text>
-    </View>
-  );
+  if (isLoading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: COLORS.background,
+        }}
+      >
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (bugs.length === 0) {
+    return <EmptyState />;
+  }
 
   return (
-    <SafeAreaView style={dashboardStyles.safeArea}>
-      <View style={dashboardStyles.header}>
-        <Text style={dashboardStyles.title}>Recon</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Recon</Text>
         <Link href="/add" asChild>
-          <TouchableOpacity style={dashboardStyles.addButton}>
+          <TouchableOpacity style={styles.addButton}>
             <Feather name="plus" size={24} color={COLORS.white} />
           </TouchableOpacity>
         </Link>
       </View>
 
+      {stats && (
+        <>
+          <StatusBar stats={stats} />
+          <UrgencyMatrix stats={stats} />
+        </>
+      )}
+
+      <PriorityLegend />
+
       {isLoading ? (
         <ActivityIndicator
           size="large"
           color={COLORS.primary}
-          style={{ marginTop: 50 }}
+          style={{ marginTop: SIZES.xl }}
         />
       ) : (
         <FlatList
@@ -66,57 +182,105 @@ export default function DashboardScreen() {
               onPress={() => router.push(`/bug/${item.id}`)}
             />
           )}
-          contentContainerStyle={dashboardStyles.listContent}
-          ListEmptyComponent={renderEmptyState}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={<View style={{ height: SIZES.md }} />}
         />
       )}
     </SafeAreaView>
   );
 }
 
-const dashboardStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: SIZES.padding,
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.sm,
   },
   title: {
     ...FONTS.h1,
     color: COLORS.text,
-    fontWeight: "bold",
   },
   addButton: {
     backgroundColor: COLORS.primary,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: SIZES.xl,
+    height: SIZES.xl,
+    borderRadius: SIZES.xl / 2,
     justifyContent: "center",
     alignItems: "center",
   },
-  addButtonText: {
-    color: COLORS.white,
-    fontSize: 28,
-    lineHeight: 34,
-  },
   listContent: {
-    paddingHorizontal: SIZES.padding,
+    paddingHorizontal: SIZES.md,
+    paddingBottom: SIZES.xl,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: "40%",
+    paddingHorizontal: SIZES.lg,
+    marginTop: -SIZES.xl,
   },
   emptyText: {
     ...FONTS.h2,
     color: COLORS.text,
-    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: SIZES.sm,
   },
   emptySubText: {
-    ...FONTS.body3,
+    ...FONTS.body,
     color: COLORS.textSecondary,
-    marginTop: SIZES.base,
+    textAlign: "center",
+  },
+  statusBarContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    backgroundColor: COLORS.card,
+    padding: SIZES.sm,
+    borderRadius: SIZES.radius_lg,
+    marginHorizontal: SIZES.md,
+    marginBottom: SIZES.sm,
+  },
+  statusItem: {
+    alignItems: "center",
+  },
+  statusCount: {
+    ...FONTS.h1,
+    fontWeight: "bold",
+  },
+  statusLabel: {
+    ...FONTS.caption,
+    color: COLORS.textSecondary,
+    marginTop: SIZES.xs / 2,
+  },
+});
+
+const legendStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-evenly",
+    alignItems: "center",
+    backgroundColor: COLORS.card,
+    borderRadius: SIZES.radius_lg,
+    marginHorizontal: SIZES.md,
+    padding: SIZES.sm,
+    marginBottom: SIZES.xs,
+  },
+  item: {
+    flexDirection: "row",
+    alignItems: "center",
+    margin: SIZES.xs / 2,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: SIZES.xs,
+  },
+  text: {
+    ...FONTS.caption,
+    color: COLORS.textSecondary,
   },
 });
