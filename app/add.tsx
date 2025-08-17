@@ -55,7 +55,7 @@ export default function AddBugScreen() {
   const [requirementNumber, setRequirementNumber] = useState("");
   const [testCaseName, setTestCaseName] = useState("");
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!summary.trim()) {
       Alert.alert("Validation Error", "Summary is required.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -79,15 +79,10 @@ export default function AddBugScreen() {
       test_case_name: testCaseName,
     };
 
-    const newBugId = addBug(newBug);
+    await addBug(newBug);
 
-    if (newBugId) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.back();
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Error", "Failed to save the bug. Please try again.");
-    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    router.back();
   };
 
   const handleStepPress = (index: number) => {

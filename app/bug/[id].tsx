@@ -39,26 +39,30 @@ export default function BugDetailScreen() {
 
   const bugId = Number(id);
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
     if (bugId) {
       setIsLoading(true);
-      const fetchedBug = getBugById(bugId);
-      const fetchedTimeline = getTimelineEvents(bugId);
+      const fetchedBug = await getBugById(bugId);
+      const fetchedTimeline = await getTimelineEvents(bugId);
       setBug(fetchedBug);
       setTimeline(fetchedTimeline.reverse());
       setIsLoading(false);
     }
   }, [bugId]);
 
-  useFocusEffect(loadData);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const handleEventPress = (event: any, x: any, y: any) => {
     setActiveEvent(event);
     setTooltipPosition({ x: x - 75, y: y - 80 });
   };
 
-  const handleSaveEvent = (event: TimelineEvent) => {
-    addTimelineEvent(event);
+  const handleSaveEvent = async (event: TimelineEvent) => {
+    await addTimelineEvent(event);
     setModalVisible(false);
     loadData();
   };

@@ -63,28 +63,30 @@ export default function EditBugScreen() {
 
   useEffect(() => {
     if (bugId) {
-      const bug = getBugById(bugId);
-      if (bug) {
-        setSummary(bug.summary);
-        setDescription(bug.description || "");
-        setSteps(bug.steps_to_reproduce || "");
-        setExpected(bug.expected_result || "");
-        setActual(bug.actual_result || "");
-        setSeverity(bug.severity);
-        setPriority(bug.priority);
-        setStatus(bug.status);
-        setAssignee(bug.assignee_name || "");
-        setReporter(bug.reporter_name || "");
-        setEnvironment(bug.environment || "");
-        setResolution(bug.resolution || "");
-        setRequirementNumber(bug.requirement_number || "");
-        setTestCaseName(bug.test_case_name || "");
-      }
-      setIsLoading(false);
+      (async () => {
+        const bug = await getBugById(bugId);
+        if (bug) {
+          setSummary(bug.summary);
+          setDescription(bug.description || "");
+          setSteps(bug.steps_to_reproduce || "");
+          setExpected(bug.expected_result || "");
+          setActual(bug.actual_result || "");
+          setSeverity(bug.severity);
+          setPriority(bug.priority);
+          setStatus(bug.status);
+          setAssignee(bug.assignee_name || "");
+          setReporter(bug.reporter_name || "");
+          setEnvironment(bug.environment || "");
+          setResolution(bug.resolution || "");
+          setRequirementNumber(bug.requirement_number || "");
+          setTestCaseName(bug.test_case_name || "");
+        }
+        setIsLoading(false);
+      })();
     }
   }, [bugId]);
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!summary.trim()) {
       Alert.alert("Validation Error", "Summary is required.");
       return;
@@ -107,7 +109,7 @@ export default function EditBugScreen() {
       test_case_name: testCaseName,
     };
 
-    const success = updateBug(bugId, updatedBug);
+    const success = await updateBug(bugId, updatedBug);
 
     if (success) {
       router.back();
@@ -127,8 +129,8 @@ export default function EditBugScreen() {
         },
         {
           text: "Archive",
-          onPress: () => {
-            const success = archiveBug(bugId);
+          onPress: async () => {
+            const success = await archiveBug(bugId);
             if (success) {
               router.replace("/");
             } else {

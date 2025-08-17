@@ -1,15 +1,22 @@
-import { open } from "sqlite";
-import sqlite3 from "sqlite3";
+import * as SQLite from "expo-sqlite";
 
-// const db = SQLite.openDatabaseSync("recon.db");
+let db: SQLite.SQLiteDatabase | null = null;
 
-const db = await open({
-  filename: "recon.db",
-  driver: sqlite3.Database,
-});
+/**
+ * A singleton function to get the database instance.
+ * If the database is not yet open, it opens it and stores the instance.
+ * Subsequent calls will return the existing instance.
+ * This prevents any top-level async operations.
+ */
+const getDb = async (): Promise<SQLite.SQLiteDatabase> => {
+  if (db) {
+    return db;
+  }
+  db = await SQLite.openDatabaseAsync("recon.db");
+  return db;
+};
 
 // --- SQL TABLE DEFINITIONS ---
-
 const SQL_CREATE_BUGS_TABLE = `
   CREATE TABLE IF NOT EXISTS Bugs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,13 +55,13 @@ const SQL_CREATE_TIMELINE_EVENTS_TABLE = `
 // --- DATABASE INITIALIZATION FUNCTION ---
 /**
  * Initializes the database by creating the necessary tables if they don't exist.
- * This function should be called once when the app starts up.
  */
-const initDb = () => {
+const initDb = async () => {
   try {
-    db.exec("PRAGMA journal_mode = WAL;");
-    db.exec(SQL_CREATE_BUGS_TABLE);
-    db.exec(SQL_CREATE_TIMELINE_EVENTS_TABLE);
+    const database = await getDb();
+    await database.execAsync("PRAGMA journal_mode = WAL;");
+    await database.execAsync(SQL_CREATE_BUGS_TABLE);
+    await database.execAsync(SQL_CREATE_TIMELINE_EVENTS_TABLE);
     console.log("Database initialized successfully.");
   } catch (error) {
     console.error("Error initializing database:", error);
@@ -62,7 +69,6 @@ const initDb = () => {
 };
 
 // DATA TYPE DEFINITIONS
-
 export type Bug = {
   id?: number;
   summary: string;
@@ -116,7 +122,7 @@ export type DashboardStats = {
 
 /**
  * Inserts a new bug into the Bugs table.
- * @param bug - An object containing all the bug details.
+ * @param bug - An object containing getAllAsync the bug details.
  * @returns The ID of the newly inserted bug.
  */
 const addBug = async (bug: Bug): Promise<number | null> => {
@@ -129,7 +135,8 @@ const addBug = async (bug: Bug): Promise<number | null> => {
   `;
 
   try {
-    const result = await db.run(
+    const db = await getDb();
+    const result = await db.runAsync(
       sql,
       bug.summary,
       bug.description || null,
@@ -146,19 +153,16 @@ const addBug = async (bug: Bug): Promise<number | null> => {
       bug.test_case_name || null
     );
 
-    const newBugId = result.lastID;
+    const newBugId = result.lastInsertRowId;
     console.log(`Bug added with ID: ${newBugId}`);
 
-    if (newBugId) {
-      await addTimelineEvent({
-        bug_id: newBugId,
-        author: bug.reporter_name || "System",
-        comment: "Bug reported",
-        is_nexus_event: false,
-      });
-      return newBugId;
-    }
-    return null;
+    await addTimelineEvent({
+      bug_id: newBugId,
+      author: bug.reporter_name || "System",
+      comment: "Bug reported",
+      is_nexus_event: false,
+    });
+    return newBugId;
   } catch (error) {
     console.error("Failed to add bug:", error);
     return null;
@@ -169,14 +173,15 @@ const addBug = async (bug: Bug): Promise<number | null> => {
  * Fetches all non-archived bugs from the database.
  * @returns A promise that resolves to an array of bug objects.
  */
-const getBugs = async (): Promise<FetchedBug[] | null> => {
+const getBugs = async (): Promise<FetchedBug[]> => {
   const sql = `SELECT * FROM Bugs WHERE is_archived = 0 ORDER BY id DESC;`;
   try {
-    const results = await db.all<FetchedBug[]>(sql);
-    return results.length > 0 ? results : null;
+    const db = await getDb();
+    const results = await db.getAllAsync<FetchedBug>(sql);
+    return results;
   } catch (error) {
     console.error("Failed to fetch bugs:", error);
-    return null;
+    return [];
   }
 };
 
@@ -188,7 +193,8 @@ const getBugs = async (): Promise<FetchedBug[] | null> => {
 const getBugById = async (id: number): Promise<FetchedBug | null> => {
   const sql = `SELECT * FROM Bugs WHERE id = ?;`;
   try {
-    const result = await db.get<FetchedBug>(sql, id);
+    const db = await getDb();
+    const result = await db.getFirstAsync<FetchedBug>(sql, id);
     return result || null;
   } catch (error) {
     console.error(`Failed to fetch bug with id ${id}:`, error);
@@ -206,7 +212,8 @@ const getTimelineEvents = async (
 ): Promise<FetchedTimelineEvent[]> => {
   const sql = `SELECT * FROM TimelineEvents WHERE bug_id = ? ORDER BY event_at DESC;`;
   try {
-    const results = await db.all<FetchedTimelineEvent[]>(sql, bug_id);
+    const db = await getDb();
+    const results = await db.getAllAsync<FetchedTimelineEvent>(sql, bug_id);
     return results;
   } catch (error) {
     console.error(`Failed to fetch timeline events for bug ${bug_id}:`, error);
@@ -227,15 +234,16 @@ const addTimelineEvent = async (
         VALUES (?, ?, ?, ?, strftime('%Y-%m-%d %H:%M:%S', 'now', 'localtime'));
     `;
   try {
-    const result = await db.run(
+    const db = await getDb();
+    const result = await db.runAsync(
       sql,
       event.bug_id,
       event.author,
       event.comment,
       event.is_nexus_event ? 1 : 0
     );
-    console.log(`Timeline event added with ID: ${result.lastID}`);
-    return result.lastID || null;
+    console.log(`Timeline event added with ID: ${result.lastInsertRowId}`);
+    return result.lastInsertRowId;
   } catch (error) {
     console.error("Failed to add timeline event:", error);
     return null;
@@ -267,7 +275,8 @@ const updateBug = async (id: number, bug: Partial<Bug>): Promise<boolean> => {
   const sql = `UPDATE Bugs SET ${setClause} WHERE id = ?;`;
 
   try {
-    await db.run(sql, ...values, id);
+    const db = await getDb();
+    await db.runAsync(sql, ...values, id);
     console.log(`Bug with ID: ${id} updated successfully.`);
 
     if (bug.status && bug.status !== oldBug.status) {
@@ -322,12 +331,13 @@ const updateBug = async (id: number, bug: Partial<Bug>): Promise<boolean> => {
 /**
  * Archives a bug by setting its is_archived flag to 1.
  * @param id The ID of the bug to archive.
- * @returns True if the archive operation was successful, false otherwise.
+ * @returns A promise that resolves to true if the archive operation was successful, false otherwise.
  */
 const archiveBug = async (id: number): Promise<boolean> => {
   const sql = `UPDATE Bugs SET is_archived = 1 WHERE id = ?;`;
   try {
-    await db.run(sql, id);
+    const db = await getDb();
+    await db.runAsync(sql, id);
     console.log(`Bug with ID: ${id} archived successfully.`);
     return true;
   } catch (error) {
@@ -338,7 +348,7 @@ const archiveBug = async (id: number): Promise<boolean> => {
 
 /**
  * Fetches aggregated statistics for the dashboard in a single query.
- * @returns A DashboardStats object.
+ * @returns A promise that resolves to a DashboardStats object.
  */
 const getDashboardStats = async (): Promise<DashboardStats> => {
   const sql = `
@@ -352,28 +362,22 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
     FROM Bugs
     WHERE is_archived = 0;
   `;
+  const defaultStats = {
+    reported: 0,
+    inProgress: 0,
+    resolved: 0,
+    criticalBugs: 0,
+    newToday: 0,
+    unassigned: 0,
+  };
+
   try {
-    const result = await db.get<DashboardStats>(sql);
-    return (
-      result || {
-        reported: 0,
-        inProgress: 0,
-        resolved: 0,
-        criticalBugs: 0,
-        newToday: 0,
-        unassigned: 0,
-      }
-    );
+    const db = await getDb();
+    const result = await db.getFirstAsync<DashboardStats>(sql);
+    return result || defaultStats;
   } catch (error) {
     console.error("Failed to fetch dashboard stats:", error);
-    return {
-      reported: 0,
-      inProgress: 0,
-      resolved: 0,
-      criticalBugs: 0,
-      newToday: 0,
-      unassigned: 0,
-    };
+    return defaultStats;
   }
 };
 

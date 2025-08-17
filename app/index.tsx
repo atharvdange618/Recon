@@ -118,12 +118,17 @@ export default function DashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setIsLoading(true);
-      const fetchedBugs = getBugs();
-      const fetchedStats = getDashboardStats();
-      setBugs(fetchedBugs);
-      setStats(fetchedStats);
-      setIsLoading(false);
+      const loadData = async () => {
+        setIsLoading(true);
+        const [fetchedBugs, fetchedStats] = await Promise.all([
+          getBugs(),
+          getDashboardStats(),
+        ]);
+        setBugs(fetchedBugs);
+        setStats(fetchedStats);
+        setIsLoading(false);
+      };
+      loadData();
     }, [])
   );
 

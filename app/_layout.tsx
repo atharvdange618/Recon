@@ -5,7 +5,10 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function Layout() {
   useEffect(() => {
-    initDb();
+    const initialize = async () => {
+      await initDb();
+    };
+    initialize();
   }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
