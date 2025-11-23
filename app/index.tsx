@@ -8,7 +8,7 @@ import {
 } from "@/lib/database";
 import { Feather } from "@expo/vector-icons";
 import { Link, useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -75,10 +75,16 @@ const UrgencyMatrix = ({ stats }: { stats: DashboardStats }) => {
         <Text style={styles.statusLabel}>Critical Bugs</Text>
       </View>
       <View style={styles.statusItem}>
-        <Text style={[styles.statusCount, { color: COLORS.accent }]}>
-          {stats.newToday}
+        <Text style={[styles.statusCount, { color: COLORS.warning }]}>
+          {stats.overdue}
         </Text>
-        <Text style={styles.statusLabel}>New Today</Text>
+        <Text style={styles.statusLabel}>Overdue</Text>
+      </View>
+      <View style={styles.statusItem}>
+        <Text style={[styles.statusCount, { color: COLORS.accent }]}>
+          {stats.dueSoon}
+        </Text>
+        <Text style={styles.statusLabel}>Due Soon</Text>
       </View>
       <View style={styles.statusItem}>
         <Text style={[styles.statusCount, { color: COLORS.textSecondary }]}>
@@ -120,13 +126,29 @@ export default function DashboardScreen() {
     useCallback(() => {
       const loadData = async () => {
         setIsLoading(true);
-        const [fetchedBugs, fetchedStats] = await Promise.all([
-          getBugs(),
-          getDashboardStats(),
-        ]);
-        setBugs(fetchedBugs);
-        setStats(fetchedStats);
-        setIsLoading(false);
+        try {
+          const [fetchedBugs, fetchedStats] = await Promise.all([
+            getBugs(),
+            getDashboardStats(),
+          ]);
+          setBugs(fetchedBugs);
+          setStats(fetchedStats);
+        } catch (error) {
+          console.error("Failed to fetch dashboard data:", error);
+          setBugs([]);
+          setStats({
+            reported: 0,
+            inProgress: 0,
+            resolved: 0,
+            criticalBugs: 0,
+            newToday: 0,
+            unassigned: 0,
+            dueSoon: 0,
+            overdue: 0,
+          });
+        } finally {
+          setIsLoading(false);
+        }
       };
       loadData();
     }, [])

@@ -3,6 +3,7 @@ import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { Card, DetailItem, formatDateTime } from "@/components/Helpers";
 import { SacredTimeline } from "@/components/SacredTimeline";
 import { Tooltip } from "@/components/Tooltip";
+import { exportBugToCSV } from "@/lib/csvExport";
 import {
   addTimelineEvent,
   FetchedBug,
@@ -13,9 +14,10 @@ import {
 } from "@/lib/database";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -32,6 +34,7 @@ export default function BugDetailScreen() {
   const [timeline, setTimeline] = useState<FetchedTimelineEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [activeEvent, setActiveEvent] = useState<FetchedTimelineEvent | null>(
     null
   );
@@ -67,6 +70,30 @@ export default function BugDetailScreen() {
     loadData();
   };
 
+  const handleCSVExport = async () => {
+    if (!bug) return;
+
+    setIsExporting(true);
+
+    try {
+      await exportBugToCSV({ bug, timeline });
+      Alert.alert(
+        "Export Successful",
+        "Bug report exported to CSV successfully!",
+        [{ text: "OK" }]
+      );
+    } catch (error) {
+      console.error("Export failed:", error);
+      Alert.alert(
+        "Export Failed",
+        "Failed to export bug report. Please try again.",
+        [{ text: "OK" }]
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <ActivityIndicator
@@ -99,12 +126,25 @@ export default function BugDetailScreen() {
         <Text style={styles.headerTitle}>
           BUG-{String(bug.id).padStart(3, "0")}
         </Text>
-        <TouchableOpacity
-          onPress={() => router.push(`/edit/${bug.id}`)}
-          style={styles.headerButton}
-        >
-          <Feather name="edit-2" size={22} color={COLORS.primary} />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={handleCSVExport}
+            style={[styles.headerButton, styles.exportButton]}
+            disabled={isExporting}
+          >
+            <Feather
+              name="download"
+              size={20}
+              color={isExporting ? COLORS.textSecondary : COLORS.primary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push(`/edit/${bug.id}`)}
+            style={styles.headerButton}
+          >
+            <Feather name="edit-2" size={22} color={COLORS.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
@@ -229,6 +269,15 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     padding: SIZES.xs,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SIZES.xs,
+  },
+  exportButton: {
+    borderRadius: SIZES.radius,
+    padding: SIZES.sm,
   },
   headerTitle: { ...FONTS.h3, color: COLORS.text, fontWeight: "bold" },
   errorText: {

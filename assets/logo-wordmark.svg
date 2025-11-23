@@ -1,0 +1,51 @@
+<svg width="600" height="200" viewBox="0 0 800 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background for preview -->
+    <rect width="600" height="200" fill="#1a1d29" />
+
+    <!-- RECON Wordmark -->
+    <g fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-weight="700"
+        font-size="120">
+        <!-- R -->
+        <text x="50" y="140">R</text>
+        <!-- E -->
+        <text x="150" y="140">E</text>
+        <!-- C -->
+        <text x="240" y="140">C</text>
+        <!-- O (replaced with crosshairs) -->
+        <!-- N -->
+        <text x="430" y="140">N</text>
+    </g>
+
+    <!-- Crosshairs replacing the 'O' -->
+    <g transform="translate(360, 100)">
+        <!-- Outer circle -->
+        <circle cx="0" cy="0" r="50" fill="none" stroke="#00d4ff" stroke-width="6" />
+        <!-- Inner circle -->
+        <circle cx="0" cy="0" r="30" fill="none" stroke="#00d4ff" stroke-width="4" />
+        <!-- Crosshairs -->
+        <line x1="0" y1="-60" x2="0" y2="60" stroke="#00d4ff" stroke-width="4" />
+        <line x1="-60" y1="0" x2="60" y2="0" stroke="#00d4ff" stroke-width="4" />
+        <!-- Center dot -->
+        <circle cx="0" cy="0" r="8" fill="#00d4ff" />
+        <circle cx="0" cy="0" r="3" fill="#1a1d29" />
+    </g>
+
+    <!-- Tactical elements -->
+    <g stroke="#7dd87d" stroke-width="3" fill="none" opacity="0.6">
+        <!-- Left tactical bracket -->
+        <path d="M20 60 L10 60 L10 50" />
+        <path d="M20 60 L20 50" />
+        <path d="M20 140 L10 140 L10 150" />
+        <path d="M20 140 L20 150" />
+
+        <!-- Right tactical bracket -->
+        <path d="M570 60 L580 60 L580 50" />
+        <path d="M570 60 L570 50" />
+        <path d="M570 140 L580 140 L580 150" />
+        <path d="M570 140 L570 150" />
+    </g>
+
+    <!-- Subtitle -->
+    <text x="50" y="180" fill="#00d4ff" font-family="system-ui, -apple-system, sans-serif"
+        font-size="24" font-weight="400" opacity="0.8">Bug Tracking Intelligence</text>
+</svg>

@@ -1,6 +1,8 @@
 import CustomPicker from "@/components/CustomPicker";
+import { DatePicker } from "@/components/DatePicker";
 import { FormStepper } from "@/components/FormStepper";
 import { Card } from "@/components/Helpers";
+import { ReminderToggle } from "@/components/ReminderToggle";
 import { StyledTextInput } from "@/components/StyledTextInput";
 import {
   priorityOptions,
@@ -11,7 +13,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -25,6 +27,7 @@ import {
 import PagerView from "react-native-pager-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { addBug, Bug } from "../lib/database";
+import { scheduleReminder } from "../lib/notifications";
 import { COLORS, FONTS, SIZES } from "../lib/theme";
 
 const formSteps = [
@@ -54,6 +57,9 @@ export default function AddBugScreen() {
   const [resolution, setResolution] = useState<Bug["resolution"] | "">("");
   const [requirementNumber, setRequirementNumber] = useState("");
   const [testCaseName, setTestCaseName] = useState("");
+  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderDaysBefore, setReminderDaysBefore] = useState(1);
 
   const handleSave = async () => {
     if (!summary.trim()) {
@@ -77,9 +83,22 @@ export default function AddBugScreen() {
       resolution: resolution ? (resolution as Bug["resolution"]) : undefined,
       requirement_number: requirementNumber,
       test_case_name: testCaseName,
+      due_date: dueDate ? dueDate.toISOString().split("T")[0] : undefined,
+      reminder_enabled: reminderEnabled,
+      reminder_days_before: reminderEnabled ? reminderDaysBefore : undefined,
     };
 
-    await addBug(newBug);
+    const bugId = await addBug(newBug);
+
+    // Schedule reminder if enabled
+    if (reminderEnabled && dueDate && bugId) {
+      try {
+        await scheduleReminder(bugId, summary, dueDate, reminderDaysBefore);
+      } catch (error) {
+        console.error("Failed to schedule reminder:", error);
+        // Don't block bug creation if reminder fails
+      }
+    }
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.back();
@@ -342,6 +361,22 @@ export default function AddBugScreen() {
                     value={testCaseName}
                     onChangeText={setTestCaseName}
                     placeholder="e.g., TC-LOGIN-MOBILE"
+                  />
+                  <DatePicker
+                    label="Due Date"
+                    value={dueDate}
+                    onChange={setDueDate}
+                    placeholder="Set a deadline for this bug"
+                  />
+                  <ReminderToggle
+                    enabled={reminderEnabled && dueDate !== null}
+                    onToggle={(enabled) => {
+                      if (dueDate) {
+                        setReminderEnabled(enabled);
+                      }
+                    }}
+                    daysBefore={reminderDaysBefore}
+                    onDaysChange={setReminderDaysBefore}
                   />
                 </Card>
               </ScrollView>

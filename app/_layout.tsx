@@ -1,15 +1,45 @@
 import { initDb } from "@/lib/database";
+import { initializeNotifications } from "@/lib/notifications";
 import { Stack } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { COLORS } from "@/lib/theme";
 
 export default function Layout() {
+  const [isDbInitialized, setIsDbInitialized] = useState(false);
+
   useEffect(() => {
     const initialize = async () => {
-      await initDb();
+      try {
+        await initDb();
+        await initializeNotifications();
+        setIsDbInitialized(true);
+      } catch (error) {
+        console.error("Failed to initialize app:", error);
+        setIsDbInitialized(true);
+      }
     };
     initialize();
   }, []);
+
+  if (!isDbInitialized) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View 
+          style={{ 
+            flex: 1, 
+            justifyContent: "center", 
+            alignItems: "center", 
+            backgroundColor: COLORS.background 
+          }}
+        >
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      </GestureHandlerRootView>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Stack

@@ -34,6 +34,9 @@ const SQL_CREATE_BUGS_TABLE = `
     resolution TEXT CHECK(resolution IN ('Fixed', 'Won''t Fix', 'Duplicate', 'Cannot Reproduce', 'Done')),
     requirement_number TEXT,
     test_case_name TEXT,
+    due_date TEXT,
+    reminder_enabled INTEGER DEFAULT 0,
+    reminder_days_before INTEGER DEFAULT 3,
     is_archived INTEGER NOT NULL DEFAULT 0,
     created_at TEXT DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now', 'localtime'))
   );
@@ -52,6 +55,19 @@ const SQL_CREATE_TIMELINE_EVENTS_TABLE = `
   );
 `;
 
+const SQL_CREATE_REMINDERS_TABLE = `
+  CREATE TABLE IF NOT EXISTS Reminders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bug_id INTEGER NOT NULL,
+    notification_id TEXT,
+    reminder_type TEXT NOT NULL CHECK(reminder_type IN ('due_soon', 'overdue', 'custom')),
+    scheduled_at TEXT NOT NULL,
+    is_sent INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now', 'localtime')),
+    FOREIGN KEY (bug_id) REFERENCES Bugs (id) ON DELETE CASCADE
+  );
+`;
+
 // --- DATABASE INITIALIZATION FUNCTION ---
 /**
  * Initializes the database by creating the necessary tables if they don't exist.
@@ -62,9 +78,46 @@ const initDb = async () => {
     await database.execAsync("PRAGMA journal_mode = WAL;");
     await database.execAsync(SQL_CREATE_BUGS_TABLE);
     await database.execAsync(SQL_CREATE_TIMELINE_EVENTS_TABLE);
+    await database.execAsync(SQL_CREATE_REMINDERS_TABLE);
+
+    // Handle database migrations for existing installations
+    await migrateDatabaseSchema(database);
+
     console.log("Database initialized successfully.");
   } catch (error) {
     console.error("Error initializing database:", error);
+  }
+};
+
+/**
+ * Handle database schema migrations for existing installations
+ */
+const migrateDatabaseSchema = async (database: any) => {
+  try {
+    // Check if new columns exist, if not add them
+    const tableInfo = await database.getAllAsync("PRAGMA table_info(Bugs);");
+    const columnNames = tableInfo.map((col: any) => col.name);
+
+    if (!columnNames.includes("due_date")) {
+      await database.execAsync("ALTER TABLE Bugs ADD COLUMN due_date TEXT;");
+      console.log("Added due_date column to Bugs table");
+    }
+
+    if (!columnNames.includes("reminder_enabled")) {
+      await database.execAsync(
+        "ALTER TABLE Bugs ADD COLUMN reminder_enabled INTEGER DEFAULT 0;"
+      );
+      console.log("Added reminder_enabled column to Bugs table");
+    }
+
+    if (!columnNames.includes("reminder_days_before")) {
+      await database.execAsync(
+        "ALTER TABLE Bugs ADD COLUMN reminder_days_before INTEGER DEFAULT 3;"
+      );
+      console.log("Added reminder_days_before column to Bugs table");
+    }
+  } catch (error) {
+    console.error("Error during database migration:", error);
   }
 };
 
@@ -90,6 +143,9 @@ export type Bug = {
     | "Done";
   requirement_number?: string;
   test_case_name?: string;
+  due_date?: string;
+  reminder_enabled?: boolean;
+  reminder_days_before?: number;
 };
 
 export type FetchedBug = Bug & {
@@ -109,6 +165,16 @@ export type FetchedTimelineEvent = TimelineEvent & {
   event_at: string;
 };
 
+export type Reminder = {
+  id?: number;
+  bug_id: number;
+  notification_id?: string;
+  reminder_type: "due_soon" | "overdue" | "custom";
+  scheduled_at: string;
+  is_sent?: boolean;
+  created_at?: string;
+};
+
 export type DashboardStats = {
   reported: number;
   inProgress: number;
@@ -116,6 +182,8 @@ export type DashboardStats = {
   criticalBugs: number;
   newToday: number;
   unassigned: number;
+  dueSoon: number;
+  overdue: number;
 };
 
 // DATABASE FUNCTIONS
@@ -130,8 +198,8 @@ const addBug = async (bug: Bug): Promise<number | null> => {
     INSERT INTO Bugs (
       summary, description, steps_to_reproduce, expected_result, actual_result,
       severity, priority, status, assignee_name, reporter_name, environment,
-      requirement_number, test_case_name
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+      requirement_number, test_case_name, due_date, reminder_enabled, reminder_days_before
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
   `;
 
   try {
@@ -150,7 +218,10 @@ const addBug = async (bug: Bug): Promise<number | null> => {
       bug.reporter_name || null,
       bug.environment || null,
       bug.requirement_number || null,
-      bug.test_case_name || null
+      bug.test_case_name || null,
+      bug.due_date || null,
+      bug.reminder_enabled ? 1 : 0,
+      bug.reminder_days_before || 3
     );
 
     const newBugId = result.lastInsertRowId;
@@ -358,7 +429,14 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
       COUNT(CASE WHEN status = 'Resolved' THEN 1 END) as resolved,
       COUNT(CASE WHEN severity = 'Critical' OR severity = 'Blocker' THEN 1 END) as criticalBugs,
       COUNT(CASE WHEN created_at >= strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 day', 'localtime') THEN 1 END) as newToday,
-      COUNT(CASE WHEN assignee_name IS NULL THEN 1 END) as unassigned
+      COUNT(CASE WHEN assignee_name IS NULL THEN 1 END) as unassigned,
+      COUNT(CASE WHEN due_date IS NOT NULL 
+                   AND due_date <= strftime('%Y-%m-%d', 'now', '+3 days', 'localtime')
+                   AND due_date > strftime('%Y-%m-%d', 'now', 'localtime')
+                   AND status NOT IN ('Resolved', 'Closed') THEN 1 END) as dueSoon,
+      COUNT(CASE WHEN due_date IS NOT NULL 
+                   AND due_date < strftime('%Y-%m-%d', 'now', 'localtime')
+                   AND status NOT IN ('Resolved', 'Closed') THEN 1 END) as overdue
     FROM Bugs
     WHERE is_archived = 0;
   `;
@@ -369,6 +447,8 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
     criticalBugs: 0,
     newToday: 0,
     unassigned: 0,
+    dueSoon: 0,
+    overdue: 0,
   };
 
   try {
@@ -381,14 +461,52 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
   }
 };
 
+// Reminder functions
+const addReminder = async (bugId: number, notificationId: string, reminderDate: string): Promise<void> => {
+  try {
+    const db = await getDb();
+    await db.runAsync(
+      'INSERT INTO Reminders (bug_id, notification_id, reminder_date) VALUES (?, ?, ?)',
+      [bugId, notificationId, reminderDate]
+    );
+  } catch (error) {
+    console.error("Failed to add reminder:", error);
+    throw error;
+  }
+};
+
+const deleteReminder = async (notificationId: string): Promise<void> => {
+  try {
+    const db = await getDb();
+    await db.runAsync('DELETE FROM Reminders WHERE notification_id = ?', [notificationId]);
+  } catch (error) {
+    console.error("Failed to delete reminder:", error);
+    throw error;
+  }
+};
+
+const getRemindersForBug = async (bugId: number): Promise<Reminder[]> => {
+  try {
+    const db = await getDb();
+    const result = await db.getAllAsync<Reminder>('SELECT * FROM Reminders WHERE bug_id = ?', [bugId]);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch reminders for bug ${bugId}:`, error);
+    return [];
+  }
+};
+
 export {
   addBug,
+  addReminder,
   addTimelineEvent,
   archiveBug,
   db,
+  deleteReminder,
   getBugById,
   getBugs,
   getDashboardStats,
+  getRemindersForBug,
   getTimelineEvents,
   initDb,
   updateBug,
