@@ -80,10 +80,6 @@ yarn-error.*
 
 # @end expo-cli
 
-Gemini.md
+*.md
 
-brand-concept.md
-
-brand-style-guide.md
-
-project-context.md
+*.sh
